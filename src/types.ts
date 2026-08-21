@@ -6,11 +6,11 @@ export {Viewport, TargetConfig, Constants}
 // Type
 type BitIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
-type ViewType = 'bits'
+type ViewType = 'bits' | 'hex';
 
-type ObjectId = Readonly<{ id: string, createTime: number }>
+type ObjectId = Readonly<{ id: string, createTime: number }>;
 
-type Rectangle = Readonly<{ pos: Vec}>
+type Rectangle = Readonly<{ pos: Vec}>;
 
 type NewType = Readonly<{
     viewType: ViewType;
