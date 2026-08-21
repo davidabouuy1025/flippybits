@@ -16,17 +16,98 @@ import "./style.css";
 
 import {
     Observable,
-    catchError,
-    filter,
     fromEvent,
     interval,
-    map,
     scan,
     switchMap,
     take, 
+    map,
+    filter,
+    merge,
+    reduce,
+    Subscription
 } from "rxjs";
 
-import {Viewport, Target, Constants, initialState, State} from './types';
+import {BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle, Viewport, TargetConfig, Constants, Event, Key} from './types';
+
+import {initialState, Tick, FlipBit, SpawnTarget, Restart, reduceState} from './state'
+
+import { RNG, Vec } from "./util";
+
+// Observables
+export const state$ = (): Observable<State> => {
+    const tick$ = interval(Constants.TICK_RATE_MS).pipe(
+            map(
+                elapsed => new Tick(elapsed)
+            )
+        );
+
+    // When users click keyboard keys
+    const keyFlip$ = fromEvent<KeyboardEvent>(document, 'keydown').pipe(
+        filter(({ repeat }) => !repeat),
+        filter(({ code }) => code.startsWith('Digit') || code === 'KeyR'),
+        map(({ code }) => {
+            if (code === 'KeyR') return new Restart();
+            // Convert 'Digit1' -> 0, 'Digit8' -> 7
+            const index = (Number(code.replace('Digit', '')) - 1) as BitIndex;
+            return new FlipBit(index);
+        })
+    );
+
+    // When users click the SVG elements in canvas directly 
+    const mouseFlip$ = fromEvent<MouseEvent>(document, 'click').pipe(
+        map(event => event.target as HTMLElement),
+        filter(target => target.hasAttribute('data-index')),
+        map(target => Number(target.getAttribute('data-index')) as BitIndex),
+        map(index => new FlipBit(index))
+    );
+
+    const spawnTarget$ = interval(2000).pipe(
+        scan(
+            ({seed}, elapsed) => {
+                const 
+                    valHash = RNG.hash(seed),
+                    xHash = RNG.hash(valHash),
+                    val = Math.floor((valHash/0x80000000) * 256),
+                    maxX = Viewport.CANVAS_WIDTH - TargetConfig.WIDTH,
+                    x = Math.floor((xHash / 0x80000000) * maxX),
+                    hex = val.toString(16).toUpperCase().padStart(2, '0'),
+
+                    target: Target = {
+                        id: `target-${elapsed}-${valHash}`,
+                        createTime: elapsed,
+                        pos: new Vec(x, 0),
+                        viewType: 'bits',
+                        value: val,
+                        hex: hex
+                    };
+
+                    return {seed: xHash, target}
+            },
+            // Initial seed
+            {
+                seed: 12345,
+                target: null as Target | null
+            }
+        ),
+        map(
+            ({target}) => new SpawnTarget(target!)
+        )
+        );
+
+    const actions$: Observable<Action> = merge(
+        tick$,
+        keyFlip$,
+        mouseFlip$,
+        spawnTarget$
+    );
+
+    const state$: Observable<State> = actions$.pipe(
+        scan(reduceState, initialState)
+    );
+
+    return state$
+}
 
 /**
  * Updates the state by proceeding with one time step.
@@ -84,75 +165,8 @@ const createSvgElement = (
     return elem;
 };
 
-const render = (): ((s: State) => void) => {
-    const svg = document.querySelector("#svgCanvas") as SVGSVGElement;
 
-    svg.setAttribute(
-        "viewBox",
-        `0 0 ${Viewport.CANVAS_WIDTH} ${Viewport.CANVAS_HEIGHT}`,
-    );
-    /**
-     * Renders the current state to the canvas.
-     *
-     * In MVC terms, this updates the View using the Model.
-     *
-     * @param s Current state
-     */
-    return (s: State) => {
-        // Draw a static falling target as a demonstration
-        const target = createSvgElement(svg.namespaceURI, "rect", {
-            x: `${Viewport.CANVAS_WIDTH / 2 - Target.WIDTH / 2}`,
-            y: "40",
-            width: `${Target.WIDTH}`,
-            height: `${Target.HEIGHT}`,
-            rx: "6",
-            fill: "white",
-            stroke: "black",
-            "stroke-width": "2",
-        });
-        const targetText = createSvgElement(svg.namespaceURI, "text", {
-            x: `${Viewport.CANVAS_WIDTH / 2}`,
-            y: `${40 + Target.HEIGHT / 2 + 8}`,
-            "text-anchor": "middle",
-            "font-family": "monospace",
-            fill: "black",
-        });
-        targetText.textContent = "13";
-        svg.appendChild(target);
-        svg.appendChild(targetText);
 
-        // Draw the row of digit toggles as a demonstration
-        const digitWidth = Viewport.CANVAS_WIDTH / Constants.DIGIT_COUNT;
-        Array.from({ length: Constants.DIGIT_COUNT }).forEach((_, i) => {
-            const bit = createSvgElement(svg.namespaceURI, "rect", {
-                x: `${i * digitWidth + 4}`,
-                y: `${Viewport.CANVAS_HEIGHT - 50}`,
-                width: `${digitWidth - 8}`,
-                height: "40",
-                fill: "#ef9a9a",
-                stroke: "black",
-                "stroke-width": "2",
-            });
-            const bitText = createSvgElement(svg.namespaceURI, "text", {
-                x: `${i * digitWidth + digitWidth / 2}`,
-                y: `${Viewport.CANVAS_HEIGHT - 22}`,
-                "text-anchor": "middle",
-                "font-family": "monospace",
-                fill: "black",
-            });
-            bitText.textContent = "0";
-            svg.appendChild(bit);
-            svg.appendChild(bitText);
-        });
-    };
-};
-
-export const state$ = (): Observable<State> => {
-    /** Determines the rate of time steps */
-    const tick$ = interval(Constants.TICK_RATE_MS);
-
-    return tick$.pipe(scan((s: State) => ({ gameEnd: false }), initialState));
-};
 
 // The following simply runs your main function on window load.  Make sure to leave it in place.
 // You should not need to change this, beware if you are.
