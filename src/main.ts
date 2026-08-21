@@ -165,7 +165,129 @@ const createSvgElement = (
     return elem;
 };
 
+const render = (): ((s: State) => void) => {
+    const svg = document.querySelector("#svgCanvas") as SVGSVGElement;
 
+    svg.setAttribute(
+        "viewBox",
+        `0 0 ${Viewport.CANVAS_WIDTH} ${Viewport.CANVAS_HEIGHT}`,
+    );
+
+    // 1. Static Setup: Create bit toggle UI once
+    const digitWidth = Viewport.CANVAS_WIDTH / Constants.DIGIT_COUNT;
+    const bitElements = Array.from({ length: Constants.DIGIT_COUNT }).map((_, i) => {
+        const rect = createSvgElement(svg.namespaceURI, "rect", {
+            x: `${i * digitWidth + 4}`,
+            y: `${Viewport.CANVAS_HEIGHT - 50}`,
+            width: `${digitWidth - 8}`,
+            height: "40",
+            fill: "#ef9a9a",
+            stroke: "black",
+            "stroke-width": "2",
+            "data-index": `${i}`, // Enables click event mapping in mouseFlip$
+        });
+
+        const text = createSvgElement(svg.namespaceURI, "text", {
+            x: `${i * digitWidth + digitWidth / 2}`,
+            y: `${Viewport.CANVAS_HEIGHT - 22}`,
+            "text-anchor": "middle",
+            "font-family": "monospace",
+            fill: "black",
+            "pointer-events": "none", // Allows clicks to pass through to the rect
+        });
+
+        svg.appendChild(rect);
+        svg.appendChild(text);
+        return { rect, text };
+    });
+
+    // 2. Static Setup: Score Text
+    const scoreText = createSvgElement(svg.namespaceURI, "text", {
+        x: "20",
+        y: "30",
+        fill: "white",
+        "font-size": "20px",
+        "font-family": "sans-serif",
+    });
+    svg.appendChild(scoreText);
+
+    // 3. Static Setup: Game Over Overlay
+    const gameOverText = createSvgElement(svg.namespaceURI, "text", {
+        x: `${Viewport.CANVAS_WIDTH / 2}`,
+        y: `${Viewport.CANVAS_HEIGHT / 2}`,
+        "text-anchor": "middle",
+        fill: "red",
+        "font-size": "32px",
+        "font-weight": "bold",
+        visibility: "hidden",
+    });
+    gameOverText.textContent = "GAME OVER - Press R to Restart";
+    svg.appendChild(gameOverText);
+
+    // Dynamic Element Cache: Stores SVGGElement instances mapped by Target ID
+    const targetMap = new Map<string, SVGGElement>();
+
+    // Returned closure: Called on every State emission
+    return (s: State) => {
+        // Update Bit UI State
+        s.bits.forEach((bitValue, i) => {
+            bitElements[i].text.textContent = String(bitValue);
+            bitElements[i].rect.setAttribute(
+                "fill", bitValue === 1 ? "#81c784" : "#ef9a9a");
+        });
+
+        // Update Score
+        scoreText.textContent = `Score: ${s.score}`;
+
+        // Reconcile Targets (Add / Update / Remove)
+        const currentTargetIds = new Set(s.targets.map(t => t.id));
+
+        // Remove stale targets no longer present in State
+        targetMap.forEach((g, id) => {
+            if (!currentTargetIds.has(id)) {
+                svg.removeChild(g);
+                targetMap.delete(id);
+            }
+        });
+
+        // Render / Move active targets
+        s.targets.forEach(t => {
+            let g = targetMap.get(t.id);
+            if (!g) {
+                g = createSvgElement(svg.namespaceURI, "g") as SVGGElement;
+
+                const rect = createSvgElement(svg.namespaceURI, "rect", {
+                    width: `${TargetConfig.WIDTH}`,
+                    height: `${TargetConfig.HEIGHT}`,
+                    rx: "6",
+                    fill: "white",
+                    stroke: "black",
+                    "stroke-width": "2",
+                });
+
+                const text = createSvgElement(svg.namespaceURI, "text", {
+                    x: `${TargetConfig.WIDTH / 2}`,
+                    y: `${TargetConfig.HEIGHT / 2 + 6}`,
+                    "text-anchor": "middle",
+                    "font-family": "monospace",
+                    fill: "black",
+                });
+                text.textContent = t.viewType === "hex" ? t.hex : String(t.value);
+
+                g.appendChild(rect);
+                g.appendChild(text);
+                svg.appendChild(g);
+                targetMap.set(t.id, g);
+            }
+
+            // Position target using SVG transform
+            g.setAttribute("transform", `translate(${t.pos.x}, ${t.pos.y})`);
+        });
+
+        // Handle Game Over Visibility
+        gameOverText.setAttribute("visibility", s.gameEnd ? "visible" : "hidden");
+    };
+};
 
 
 // The following simply runs your main function on window load.  Make sure to leave it in place.
