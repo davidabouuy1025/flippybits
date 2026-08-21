@@ -20,7 +20,7 @@ import {
     interval,
     scan,
     switchMap,
-    take, 
+    take,
     map,
     filter,
     merge,
@@ -28,19 +28,19 @@ import {
     Subscription
 } from "rxjs";
 
-import {BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle, Viewport, TargetConfig, Constants, Event, Key} from './types';
+import { BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle, Viewport, TargetConfig, Constants, Event, Key } from './types';
 
-import {initialState, Tick, FlipBit, SpawnTarget, Restart, reduceState} from './state'
+import { initialState, Tick, FlipBit, SpawnTarget, Restart, reduceState, bin2dec } from './state'
 
 import { RNG, Vec } from "./util";
 
 // Observables
 export const state$ = (): Observable<State> => {
     const tick$ = interval(Constants.TICK_RATE_MS).pipe(
-            map(
-                elapsed => new Tick(elapsed)
-            )
-        );
+        map(
+            elapsed => new Tick(elapsed)
+        )
+    );
 
     // When users click keyboard keys
     const keyFlip$ = fromEvent<KeyboardEvent>(document, 'keydown').pipe(
@@ -62,13 +62,13 @@ export const state$ = (): Observable<State> => {
         map(index => new FlipBit(index))
     );
 
-    const spawnTarget$ = interval(2000).pipe(
+    const spawnTarget$ = interval(1000).pipe(
         scan(
-            ({seed}, elapsed) => {
-                const 
+            ({ seed }, elapsed) => {
+                const
                     valHash = RNG.hash(seed),
                     xHash = RNG.hash(valHash),
-                    val = Math.floor((valHash/0x80000000) * 256),
+                    val = Math.floor((valHash / 0x80000000) * 16),
                     maxX = Viewport.CANVAS_WIDTH - TargetConfig.WIDTH,
                     x = Math.floor((xHash / 0x80000000) * maxX),
                     hex = val.toString(16).toUpperCase().padStart(2, '0'),
@@ -82,7 +82,7 @@ export const state$ = (): Observable<State> => {
                         hex: hex
                     };
 
-                    return {seed: xHash, target}
+                return { seed: xHash, target }
             },
             // Initial seed
             {
@@ -91,9 +91,9 @@ export const state$ = (): Observable<State> => {
             }
         ),
         map(
-            ({target}) => new SpawnTarget(target!)
+            ({ target }) => new SpawnTarget(target!)
         )
-        );
+    );
 
     const actions$: Observable<Action> = merge(
         tick$,
@@ -211,6 +211,15 @@ const render = (): ((s: State) => void) => {
     });
     svg.appendChild(scoreText);
 
+    const currentValue = createSvgElement(svg.namespaceURI, 'text', {
+        x: "20",
+        y: "80",
+        fill: "white",
+        "font-size": "20px",
+        "font-family": "sans-serif",
+    });
+    svg.appendChild(currentValue);
+
     // 3. Static Setup: Game Over Overlay
     const gameOverText = createSvgElement(svg.namespaceURI, "text", {
         x: `${Viewport.CANVAS_WIDTH / 2}`,
@@ -238,6 +247,8 @@ const render = (): ((s: State) => void) => {
 
         // Update Score
         scoreText.textContent = `Score: ${s.score}`;
+
+        currentValue.textContent = `Value: ${bin2dec(s.bits)}`;
 
         // Reconcile Targets (Add / Update / Remove)
         const currentTargetIds = new Set(s.targets.map(t => t.id));
