@@ -2,8 +2,7 @@ import { constrainedMemory } from 'process';
 import {Viewport, TargetConfig, Constants, BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle} from './types';  
 import { Vec } from './util';
 
-export {reduceState}
-export {initialState, Tick, FlipBit, SpawnTarget, Restart}
+export {bin2dec, reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart}
 
 // FallenBits is just Rectangle
 const createRectangle = (viewType: ViewType) => 
