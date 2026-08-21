@@ -74,8 +74,7 @@ class Tick implements Action {
                     : movingTargets,
 
             crossed = movingTargets.some(
-                eachTarget => eachTarget.pos.y > TargetConfig.CHECK_LINE_Y, 
-                false
+                eachTarget => eachTarget.pos.y > TargetConfig.CHECK_LINE_Y
             );
 
         return {
@@ -97,7 +96,7 @@ class FlipBit implements Action {
         const
             newBits = s.bits.map(
                 (eachBit, bitIndex) => 
-                    this.index
+                    bitIndex === this.index
                         ? (eachBit===0 ? 1 : 0)
                         : eachBit
             )
