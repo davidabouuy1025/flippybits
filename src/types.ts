@@ -1,42 +1,54 @@
-export {Viewport, Constants, initialState};
-export type {State, Target};
+import {Vec} from './util'
 
-export type BitIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type {BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle}
+export {Viewport, TargetConfig, Constants}
 
-type Target = Readonly<{
-  id: string;
-  value: number; // Decimal value (0 - 255)
-  hex: string;   // Hexadecimal string representation (e.g. "FF")
-  x: number;
-  y: number;
+// Type
+type BitIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+type ViewType = 'bits'
+
+type ObjectId = Readonly<{ id: string, createTime: number }>
+
+type Rectangle = Readonly<{ pos: Vec}>
+
+type Target = Rectangle & ObjectId & Readonly<{
+    viewType: ViewType;
+    value: number; // Decimal value (0 - 255)
+    hex: string;   // Hexadecimal string representation (e.g. "FF")
 }>;
 
 type State = Readonly<{
-  bits: ReadonlyArray<number>; // 8 bits: [0, 0, 0, 0, 0, 0, 0, 0]
-  targets: ReadonlyArray<Target>;
-  score: number;
-  gameEnd: boolean;
+    time: number,
+    bits: ReadonlyArray<number>; // 8 bits: [0, 0, 0, 0, 0, 0, 0, 0]
+    targets: ReadonlyArray<Target>;
+    score: number;
+    gameEnd: boolean;
 }>;
 
+type Key = 'Digit1' | 'Digit2' | 'Digit3' | 'Digit4' | 'Digit5' | 'Digit6' | 'Digit7' | 'Digit8' | 'KeyR';
+
+type Event = 'keydown' | 'keyup' | 'click';
+
+// Constant
 const Viewport = {
     CANVAS_WIDTH: 600,
     CANVAS_HEIGHT: 400,
 } as const;
 
-const Target = {
+const TargetConfig = {
     WIDTH: 64,
     HEIGHT: 36,
 } as const;
 
 const Constants = {
     DIGIT_COUNT: 8,
-    TICK_RATE_MS: 60, // Might need to change this!
+    TICK_RATE_MS: 60, // Might need to change this!,
+    SCORE_INCREMENT: 1,
+    STARTBITSCOUNT: 1,   // Redundant as we do increment on the fallen bits count actually,
+    STARTTIME: 0,
 } as const;
 
-
-const initialState: State = {
-    bits: [0,0,0,0,0,0,0,0],
-    targets: [],
-    score: 0,
-    gameEnd: false,
-};
+interface Action {
+    apply(s: State): State;
+}
