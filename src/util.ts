@@ -1,5 +1,32 @@
 export {Vec, RNG}
 
+export type RandomResult<T> = Readonly<{
+    value: T,
+    nextSeed: number
+}>;
+
+export const generateRandomInt = 
+  (min: number) => 
+  (max: number) => 
+  (seed: number): RandomResult<number> => {
+    const nextSeed = RNG.hash(seed);
+    // Hash is in [0, 0x80000000), scale normalized ratio to [min, max)
+    const value = min + Math.floor((nextSeed / 0x80000000) * (max - min));
+    return { value, nextSeed };
+  };
+
+export const generateTargetParams = (seed: number, maxX: number) => {
+  const valRes = generateRandomInt(0)(16)(seed);             // Target value 0-15
+  const xRes = generateRandomInt(0)(maxX)(valRes.nextSeed);   // Position X
+  
+  return {
+    val: valRes.value,
+    x: xRes.value,
+    hex: valRes.value.toString(16).toUpperCase().padStart(2, '0'),
+    nextSeed: xRes.nextSeed,
+  };
+};
+
 abstract class RNG {
     // LCG using GCC's constants
     private static m = 0x80000000; // 2**31
