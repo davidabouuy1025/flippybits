@@ -1,38 +1,15 @@
-import { constrainedMemory } from 'process';
 import {Viewport, TargetConfig, Constants, BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle} from './types';  
 import { Vec } from './util';
 
 export {bin2dec, reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart}
 
-// FallenBits is just Rectangle
-const createRectangle = (viewType: ViewType) => 
-    (oid: ObjectId) => 
-        (rect: Rectangle): Target => ({
-            ...oid,
-            ...rect,
-            viewType: viewType,
-            id: viewType + oid.id,
-            value: 10,  // changed
-            hex: "FF"   // changed
-        });
-
-const createBits = createRectangle('bits');
-
-const
-    // Init Bits
-    startBits = [...Array(Constants.START_BITS_COUNT)]
-        .map((_, i) => createBits({id: String(i),
-            createTime: Constants.START_TIME})
-            ({pos: Vec.Zero})),
-
-    // Init initial state
-    initialState: State = {
-        time: 0,
-        bits: [0,0,0,0,0,0,0,0],
-        targets: [],
-        score: 0,
-        gameEnd: false,
-    };
+const initialState: State = {
+    time: 0,
+    bits: [0,0,0,0,0,0,0,0],
+    targets: [],
+    score: 0,
+    gameEnd: false,
+};
 
 // Convert the player's 8-bit array into a base-10 number to check against target values.
 const bin2dec = (bits: ReadonlyArray<number>): number => 
@@ -48,11 +25,13 @@ class Tick implements Action {
         if (s.gameEnd) return s;
 
         const 
+            // FIlter available targets
             movingTargets: Array<Target> = s.targets.map(eachTarget => ({
                 ...eachTarget,
                 pos: new Vec(eachTarget.pos.x, eachTarget.pos.y+2)
             })),
 
+            // Find the bottommost target 
             lowestTarget: Target | null = movingTargets.reduce<Target | null>(
                 (acc, eachTarget) => 
                     (!acc || eachTarget.pos.y > acc.pos.y) 
@@ -61,10 +40,12 @@ class Tick implements Action {
                     null
             ),
 
+            // Check if users' bits panel is equal to the lowest target
             binaryMatched = 
                 lowestTarget !== null && 
                 lowestTarget.value == bin2dec(s.bits),
 
+            // Targets left available
             targetsLeft = 
                 binaryMatched && lowestTarget !== null 
                     ? movingTargets.filter(eachTarget => 
@@ -72,6 +53,7 @@ class Tick implements Action {
                     )
                     : movingTargets,
 
+            // Check if any target touches the bottom of canvas
             crossed = movingTargets.some(
                 eachTarget => eachTarget.pos.y > TargetConfig.CHECK_LINE_Y
             );
