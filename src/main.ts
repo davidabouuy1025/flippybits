@@ -25,14 +25,17 @@ import {
     filter,
     merge,
     reduce,
-    Subscription
+    Subscription,
+    of,
+    expand,
+    timer
 } from "rxjs";
 
 import { BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle, Viewport, TargetConfig, Constants, Event, Key } from './types';
 
 import { initialState, Tick, FlipBit, SpawnTarget, Restart, reduceState, bin2dec } from './state'
 
-import { RNG, Vec } from "./util";
+import { generateRandomInt, generateTargetParams, RNG, Vec } from "./util";
 
 // Observables
 export const state$ = (): Observable<State> => {
@@ -62,38 +65,35 @@ export const state$ = (): Observable<State> => {
         map(index => new FlipBit(index))
     );
 
-    const spawnTarget$ = interval(1000).pipe(
-        scan(
-            ({ seed }, elapsed) => {
-                const
-                    valHash = RNG.hash(seed),
-                    xHash = RNG.hash(valHash),
-                    val = Math.floor((valHash / 0x80000000) * 16),
-                    maxX = Viewport.CANVAS_WIDTH - TargetConfig.WIDTH,
-                    x = Math.floor((xHash / 0x80000000) * maxX),
-                    hex = val.toString(16).toUpperCase().padStart(2, '0'),
+    const spawnTarget$ = of({seed: 12345, elapsed: 0}).pipe(
+        expand(({ seed, elapsed }) => {
+            const delayRes = generateRandomInt(1000)(3000)(seed);
+            
+            return timer(delayRes.value).pipe(
+                map(() => ({
+                    seed: delayRes.nextSeed,
+                    elapsed: elapsed + 1,
+                }))
+            );
+        }),
+        filter(({ elapsed }) => elapsed > 0),
+            map(({ seed, elapsed }) => {
+                const maxX = Viewport.CANVAS_WIDTH - TargetConfig.WIDTH;
 
-                    target: Target = {
-                        id: `target-${elapsed}-${valHash}`,
-                        createTime: elapsed,
-                        pos: new Vec(x, 0),
-                        viewType: 'bits',
-                        value: val,
-                        hex: hex
-                    };
+                const { val, x, hex, nextSeed } = generateTargetParams(seed, maxX);
 
-                return { seed: xHash, target }
-            },
-            // Initial seed
-            {
-                seed: 12345,
-                target: null as Target | null
-            }
-        ),
-        map(
-            ({ target }) => new SpawnTarget(target!)
-        )
-    );
+                const target: Target = {
+                id: `target-${elapsed}-${nextSeed}`,
+                createTime: elapsed,
+                pos: new Vec(x, 0),
+                viewType: 'bits',
+                value: val,
+                hex: hex,
+                };
+
+                return new SpawnTarget(target);
+            })
+        );
 
     const actions$: Observable<Action> = merge(
         tick$,
