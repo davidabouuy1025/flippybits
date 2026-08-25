@@ -30,10 +30,12 @@ const computeSpeed = <TScore, TResult extends number>(
 };
 
 const findMovingTargets = (s: State, speed: number) => {
-    return s.targets.map(eachTarget => ({
+    return {
+        ...s,
+        targets: s.targets.map(eachTarget => ({
         ...eachTarget,
         pos: new Vec(eachTarget.pos.x, eachTarget.pos.y + speed)
-    }))
+    }))}
 };
 
 const findLowestTarget = (s: State) => {
@@ -50,12 +52,12 @@ const checkBinaryMatched = (s: State, lowestTarget: Target | null) => {
     return lowestTarget !== null && lowestTarget.value == bin2dec(s.bits)
 }
 
-const filterTargetLeft = (s: State, lowestTarget: Target | null, targets: readonly Target[], binaryMatched: Boolean) => {
+const filterTargetLeft = (s: State, lowestTarget: Target | null, binaryMatched: Boolean) => {
     return binaryMatched && lowestTarget !== null 
-        ? targets.filter(eachTarget => 
+        ? s.targets.filter(eachTarget => 
             eachTarget.id !== lowestTarget.id
         )
-        : targets
+        : s.targets
 }
 
 const checkTargetTouched = (targets: readonly Target[]) => {
@@ -80,8 +82,8 @@ class Tick implements Action {
                 calculateSpeedOverTime
             ),
 
-            // FIlter available Targets
-            movingTargets: Array<Target> = findMovingTargets(s, finalSpeed),
+            // Filter available Targets
+            movingTargets: State = findMovingTargets(s, finalSpeed),
 
             // Find the bottommost target 
             lowestTarget: Target | null = findLowestTarget(s),
@@ -90,7 +92,7 @@ class Tick implements Action {
             binaryMatched = checkBinaryMatched(s, lowestTarget),
 
             // Targets left available
-            targetsLeft = filterTargetLeft(s, lowestTarget, movingTargets, binaryMatched),
+            targetsLeft = filterTargetLeft(s, lowestTarget, binaryMatched),
 
             // Check if any target touches the bottom of canvas
             crossed = checkTargetTouched(targetsLeft);
