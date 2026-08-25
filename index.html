@@ -5,7 +5,7 @@
     </head>
     <body>
         <h1>Flippy Bit</h1>
-        <main id="main" class="flex col">
+        <main id="main" class="flex">
             <svg id="svgCanvas" width="600" height="400">
                 <g id="gameOver" visibility="hidden">
                     <rect
@@ -18,10 +18,19 @@
                     <text x="235" y="206">Game Over</text>
                 </g>
             </svg>
-            <div id="sideBar" class="flex col">
-                <div id="info" class="flex col">
-                </div>
-            </div>
+            
+            <svg id="svgEffect" width="300" height="200">
+                <g id="effect" visibility="hidden">
+                    <rect
+                        x="875"
+                        y="176"
+                        fill="white"
+                        height="300"
+                        width="200"
+                    ></rect>
+                    <text>Effect</text>
+                </g>
+            </svg>
         </main>
         <script type="module" src="./src/main.ts"></script>
     </body>
