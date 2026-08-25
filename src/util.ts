@@ -1,5 +1,20 @@
 export {Vec, RNG}
 
+/**
+  * To compute speed scaling for Target when dropping down
+  * Dropping speed increases when user's score increases 
+  * @param baseSpeed
+  * @param speedStep
+  * @param scoreStep
+  * @param currentScore
+ */
+export const calculateSpeed = 
+  (baseSpeed: number) =>
+    (speedStep: number) =>
+      (scoreStep: number) =>
+        (currentScore: number): number =>
+          baseSpeed + Math.floor(currentScore/scoreStep) * speedStep;
+
 export type RandomResult<T> = Readonly<{
     value: T,
     nextSeed: number
