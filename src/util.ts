@@ -1,5 +1,14 @@
 export {Vec, RNG}
 
+export const maxBy = <T>(
+    array: readonly T[], 
+    keyFn: (item: T) => number
+): T | null => 
+    array.reduce<T | null>(
+        (acc, item) => (!acc || keyFn(item) > keyFn(acc) ? item : acc),
+        null
+    );
+
 /**
  * calculateSpeedOverScore()
  * 
