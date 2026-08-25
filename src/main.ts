@@ -24,14 +24,12 @@ import {
     map,
     filter,
     merge,
-    reduce,
-    Subscription,
     of,
     expand,
     timer
 } from "rxjs";
 
-import { BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle, Viewport, TargetConfig, Constants, Event, Key } from './types';
+import { BitIndex, Target, State, Action, Viewport, TargetConfig, Constants } from './types';
 
 import { initialState, Tick, FlipBit, SpawnTarget, Restart, reduceState, bin2dec, Pause } from './state'
 
