@@ -26,7 +26,9 @@ import {
     merge,
     of,
     expand,
-    timer
+    timer,
+    NEVER,
+    startWith,
 } from "rxjs";
 
 import { BitIndex, Target, State, Action, Viewport, TargetConfig, Constants } from './types';
@@ -96,20 +98,30 @@ export const state$ = (): Observable<State> => {
             })
         );
 
-    const pause$ = fromEvent<KeyboardEvent>(
-        document,
-        'keydown'
-    ).pipe(
-        filter(({code}) => code === "KeyP" || code === "Escape"),
+    const pause$ = fromEvent<KeyboardEvent>(document, 'keydown').pipe(
+        filter(({ code }) => code === "KeyP" || code === "Escape"),
         map(() => new Pause())
-    )
+    );
+
+    const isPaused$: Observable<boolean> = pause$.pipe(
+        scan((paused: boolean) => !paused, false),
+        startWith(false)
+    );
+
+    const pausableTick$ = isPaused$.pipe(
+        switchMap(isPaused => isPaused ? NEVER : tick$)
+    );
+
+    const pausableSpawn$ = isPaused$.pipe(
+        switchMap(isPaused => isPaused ? NEVER : spawnTarget$)
+    );
 
     const actions$: Observable<Action> = merge(
-        tick$,
+        pausableTick$,
+        pausableSpawn$,
+        pause$,
         keyFlip$,
         mouseFlip$,
-        spawnTarget$,
-        pause$
     );
 
     const state$: Observable<State> = actions$.pipe(
