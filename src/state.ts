@@ -39,9 +39,8 @@ const findMovingTargets = (s: State, speed: number) => ({
 const findLowestTarget = (s: State) => 
     maxBy(s.targets, target => target.pos.y);
 
-const checkBinaryMatched = (s: State, lowestTarget: Target | null) => (
-    lowestTarget !== null && lowestTarget.value == bin2dec(s.bits)
-);
+const checkBinaryMatched = (s: State, lowestTarget: Target | null) => 
+    lowestTarget !== null && lowestTarget.value == bin2dec(s.bits);
 
 const filterTargetLeft = (
     targets: readonly Target[],
@@ -53,11 +52,10 @@ const filterTargetLeft = (
         : targets;
 ;
 
-const checkTargetTouched = (targets: readonly Target[]) => {
+const checkTargetTouched = (targets: readonly Target[]) => 
     targets.some(
         eachTarget => eachTarget.pos.y > TargetConfig.CHECK_LINE_Y
-    )
-};
+    );
 
 class Tick implements Action {
     constructor(public readonly elapsed: number) { }
