@@ -2,13 +2,14 @@ import { filter } from 'rxjs';
 import {Viewport, TargetConfig, Constants, BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle} from './types';  
 import { calculateSpeedOverScore, calculateSpeedOverTime, Vec } from './util';
 
-export {bin2dec, reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart}
+export {bin2dec, reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart, Pause}
 
 const initialState: State = {
     time: 0,
     bits: [0,0,0,0,0,0,0,0],
     targets: [],
     score: 0,
+    gamePause: false,
     gameEnd: false,
 };
 
@@ -19,10 +20,14 @@ const bin2dec = (bits: ReadonlyArray<number>): number =>
          0
     );
 
-const computeSpeed = (s: State, func: Function) => {
-    const computeSpeedOverScore = func(s.score)
-    return calculateSpeedOverScore(s.time) + computeSpeedOverScore
-}
+const computeSpeed = <TScore, TResult extends number>(
+    score: TScore,
+    currentTime: number,
+    scoreSpeedFn: (score: TScore) => TResult,
+    timeSpeedFn: (time: number) => number
+): number => {
+    return timeSpeedFn(currentTime) + scoreSpeedFn(score);
+};
 
 const findMovingTargets = (s: State, speed: number) => {
     return s.targets.map(eachTarget => ({
@@ -63,11 +68,17 @@ class Tick implements Action {
     constructor(public readonly elapsed: number){}
 
     apply(s: State): State {
-        if (s.gameEnd) return s;
+        if (s.gameEnd || s.gamePause) return s;
 
         const 
-            getScaledSpeed = calculateSpeedOverScore(Constants.BASE_SPEED)(Constants.SPEED_INCREMENT)(Constants.SCORE_INTERVAL),
-            finalSpeed = computeSpeed(s, getScaledSpeed),
+            getScaledSpeed = calculateSpeedOverScore(Constants.BASE_SPEED)(Constants.SPEED_INCREMENT)(Constants.SCORE_INTERVAL), 
+            
+            finalSpeed = computeSpeed(
+                s.score, 
+                s.time, 
+                getScaledSpeed, 
+                calculateSpeedOverTime
+            ),
 
             // FIlter available Targets
             movingTargets: Array<Target> = findMovingTargets(s, finalSpeed),
@@ -98,7 +109,7 @@ class FlipBit implements Action {
     constructor (public readonly index: BitIndex){}
 
     apply(s: State): State {
-        if (s.gameEnd) return s;
+        if (s.gameEnd || s.gamePause) return s;
 
         const
             newBits = s.bits.map(
@@ -119,7 +130,7 @@ class SpawnTarget implements Action {
     constructor (public readonly target: Target){}
 
     apply(s: State): State{
-        if (s.gameEnd) return s;
+        if (s.gameEnd || s.gamePause) return s;
 
         return {
             ...s,
@@ -132,6 +143,19 @@ class SpawnTarget implements Action {
 class Restart implements Action {
     apply(_: State): State {
         return initialState
+    }
+}
+
+class Pause implements Action {
+    apply(s: State): State {
+        if (s.gameEnd){
+            return s
+        }
+
+        return {
+            ...s,
+            gamePause: !s.gamePause,
+        }
     }
 }
 

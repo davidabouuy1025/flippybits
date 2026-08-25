@@ -25,6 +25,7 @@ type State = Readonly<{
     bits: ReadonlyArray<number>; // 8 bits: [0, 0, 0, 0, 0, 0, 0, 0]
     targets: ReadonlyArray<Target>;
     score: number;
+    gamePause: boolean;
     gameEnd: boolean;
 }>;
 

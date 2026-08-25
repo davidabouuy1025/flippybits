@@ -33,7 +33,7 @@ import {
 
 import { BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle, Viewport, TargetConfig, Constants, Event, Key } from './types';
 
-import { initialState, Tick, FlipBit, SpawnTarget, Restart, reduceState, bin2dec } from './state'
+import { initialState, Tick, FlipBit, SpawnTarget, Restart, reduceState, bin2dec, Pause } from './state'
 
 import { generateRandomInt, generateTargetParams, RNG, Vec } from "./util";
 
@@ -67,6 +67,7 @@ export const state$ = (): Observable<State> => {
     );
 
     const spawnTarget$ = of({seed: 12345, elapsed: 0}).pipe(
+        // Map {seed, elapsed} to Observable
         expand(({ seed, elapsed }) => {
             // Generate next Target within 1~3 seconds
             const delayRes = generateRandomInt(1000)(3000)(seed);
@@ -97,11 +98,20 @@ export const state$ = (): Observable<State> => {
             })
         );
 
+    const pause$ = fromEvent<KeyboardEvent>(
+        document,
+        'keydown'
+    ).pipe(
+        filter(({code}) => code === "KeyP" || code === "Escape"),
+        map(() => new Pause())
+    )
+
     const actions$: Observable<Action> = merge(
         tick$,
         keyFlip$,
         mouseFlip$,
-        spawnTarget$
+        spawnTarget$,
+        pause$
     );
 
     const state$: Observable<State> = actions$.pipe(
@@ -109,14 +119,6 @@ export const state$ = (): Observable<State> => {
     );
     return state$
 }
-
-/**
- * Updates the state by proceeding with one time step.
- *
- * @param s Current state
- * @returns Updated state
- */
-const tick = (s: State) => s;
 
 // Rendering (side effects)
 
