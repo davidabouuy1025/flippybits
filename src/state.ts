@@ -1,5 +1,5 @@
 import {Viewport, TargetConfig, Constants, BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle} from './types';  
-import { Vec } from './util';
+import { calculateSpeed, Vec } from './util';
 
 export {bin2dec, reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart}
 
@@ -25,10 +25,15 @@ class Tick implements Action {
         if (s.gameEnd) return s;
 
         const 
-            // FIlter available targets
+            // Update speed of Target falling
+            getScaledSpeed = calculateSpeed(Constants.BASE_SPEED)(Constants.SPEED_INCREMENT)(Constants.SCORE_INTERVAL),
+
+            computeSpeed = getScaledSpeed(s.score),
+
+            // FIlter available Targets
             movingTargets: Array<Target> = s.targets.map(eachTarget => ({
                 ...eachTarget,
-                pos: new Vec(eachTarget.pos.x, eachTarget.pos.y+2)
+                pos: new Vec(eachTarget.pos.x, computeSpeed)
             })),
 
             // Find the bottommost target 
