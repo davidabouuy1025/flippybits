@@ -44,12 +44,21 @@ const TargetConfig = {
     CHECK_LINE_Y: 340,
 } as const;
 
+/**
+ * Constants used in game program
+ *  - Game point
+ *  - Whole game physics
+ *  - Game physics - Target
+ */
 const Constants = {
     DIGIT_COUNT: 8,
-    TICK_RATE_MS: 60, // Might need to change this!,
     SCORE_INCREMENT: 1,
-    START_BITS_COUNT: 1,   // Redundant as we do increment on the fallen bits count actually,
-    START_TIME: 0,
+
+    TICK_RATE_MS: 50, // Might need to change this!,
+
+    BASE_SPEED: 1,
+    SPEED_INCREMENT: 0.5,
+    SCORE_INTERVAL: 5
 } as const;
 
 interface Action {
