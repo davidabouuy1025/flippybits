@@ -7,16 +7,16 @@ export type RandomResult<T> = Readonly<{
 
 export const generateRandomInt = 
   (min: number) => 
-  (max: number) => 
-  (seed: number): RandomResult<number> => {
-    const nextSeed = RNG.hash(seed);
-    // Hash is in [0, 0x80000000), scale normalized ratio to [min, max)
-    const value = min + Math.floor((nextSeed / 0x80000000) * (max - min));
-    return { value, nextSeed };
-  };
+    (max: number) => 
+      (seed: number): RandomResult<number> => {
+        const nextSeed = RNG.hash(seed);
+        // Hash is in [0, 0x80000000), scale normalized ratio to [min, max)
+        const value = min + Math.floor((nextSeed / 0x80000000) * (max - min));
+        return { value, nextSeed };
+      };
 
 export const generateTargetParams = (seed: number, maxX: number) => {
-  const valRes = generateRandomInt(0)(16)(seed);             // Target value 0-15
+  const valRes = generateRandomInt(0)(16)(seed);              // Target value 0-15
   const xRes = generateRandomInt(0)(maxX)(valRes.nextSeed);   // Position X
   
   return {
@@ -41,7 +41,7 @@ abstract class RNG {
     public static hash = (seed: number) => (RNG.a * seed + RNG.c) % RNG.m;
 
     /**
- h    * Takes hash value and scales it to the range [-1, 1]
+     * Takes hash value and scales it to the range [-1, 1]
      */
     public static scale = (hash: number) => (2 * hash) / (RNG.m - 1) - 1;
 }
