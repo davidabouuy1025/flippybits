@@ -57,8 +57,8 @@ const Constants = {
     TICK_RATE_MS: 50, // Might need to change this!,
 
     BASE_SPEED: 1,
-    SPEED_INCREMENT: 0.5,
-    SCORE_INTERVAL: 5
+    SPEED_INCREMENT: 0.25,
+    SCORE_INTERVAL: 5,
 } as const;
 
 interface Action {
