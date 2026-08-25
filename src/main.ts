@@ -39,6 +39,7 @@ import { generateRandomInt, generateTargetParams, RNG, Vec } from "./util";
 
 // Observables
 export const state$ = (): Observable<State> => {
+    // Generate Tick action every 60ms for State updates
     const tick$ = interval(Constants.TICK_RATE_MS).pipe(
         map(
             elapsed => new Tick(elapsed)
@@ -67,6 +68,7 @@ export const state$ = (): Observable<State> => {
 
     const spawnTarget$ = of({seed: 12345, elapsed: 0}).pipe(
         expand(({ seed, elapsed }) => {
+            // Generate next Target within 1~3 seconds
             const delayRes = generateRandomInt(1000)(3000)(seed);
             
             return timer(delayRes.value).pipe(
@@ -105,7 +107,6 @@ export const state$ = (): Observable<State> => {
     const state$: Observable<State> = actions$.pipe(
         scan(reduceState, initialState)
     );
-
     return state$
 }
 
