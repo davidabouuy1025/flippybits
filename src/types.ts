@@ -12,13 +12,13 @@ type ObjectId = Readonly<{ id: string, createTime: number }>;
 
 type Rectangle = Readonly<{ pos: Vec}>;
 
-type NewType = Readonly<{
+type TargetDetails = Readonly<{
     viewType: ViewType;
     value: number; // Decimal value (0 - 255)
     hex: string; // Hexadecimal string representation (e.g. "FF")
 }>;
 
-type Target = Rectangle & ObjectId & NewType;
+type Target = Rectangle & ObjectId & TargetDetails;
 
 type State = Readonly<{
     time: number,
