@@ -28,7 +28,10 @@ const computeSpeed = <TScore, TResult extends number>(
     return timeSpeedFn(currentTime) + scoreSpeedFn(score);
 };
 
-const findMovingTargets = (s: State, speed: number) => ({
+const findMovingTargets = (
+    s: State, 
+    speed: number
+): State => ({
     ...s,
     targets: s.targets.map(eachTarget => ({
         ...eachTarget,
@@ -36,10 +39,15 @@ const findMovingTargets = (s: State, speed: number) => ({
     }))
 });
 
-const findLowestTarget = (s: State) => 
+const findLowestTarget = (
+    s: State
+) => 
     maxBy(s.targets, target => target.pos.y);
 
-const checkBinaryMatched = (s: State, lowestTarget: Target | null) => 
+const checkBinaryMatched = (
+    s: State, 
+    lowestTarget: Target | null
+): boolean => 
     lowestTarget !== null && lowestTarget.value == bin2dec(s.bits);
 
 const filterTargetLeft = (
@@ -61,8 +69,6 @@ class Tick implements Action {
     constructor(public readonly elapsed: number) { }
 
     apply(s: State): State {
-        if (s.gameEnd || s.gamePause) return s;
-
         const
             getScaledSpeed = calculateSpeedOverScore(Constants.BASE_SPEED)(Constants.SPEED_INCREMENT)(Constants.SCORE_INTERVAL),
 
