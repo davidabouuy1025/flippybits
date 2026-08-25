@@ -223,7 +223,19 @@ const render = (): ((s: State) => void) => {
     });
     svg.appendChild(currentValue);
 
-    // 3. Static Setup: Game Over Overlay
+    // 3. Static Setup: Text Overlay
+    const startText = createSvgElement(svg.namespaceURI, "text", {
+        x: `${Viewport.CANVAS_WIDTH / 2}`,
+        y: `${Viewport.CANVAS_HEIGHT / 2}`,
+        "text-anchor": "middle",
+        fill: "red",
+        "font-size": "32px",
+        "font-weight": "bold",
+        visibility: "hidden",
+    });
+    startText.textContent = "Click anywehre to start!";
+    svg.appendChild(startText);
+
     const gameOverText = createSvgElement(svg.namespaceURI, "text", {
         x: `${Viewport.CANVAS_WIDTH / 2}`,
         y: `${Viewport.CANVAS_HEIGHT / 2}`,
@@ -235,6 +247,18 @@ const render = (): ((s: State) => void) => {
     });
     gameOverText.textContent = "GAME OVER - Press R to Restart";
     svg.appendChild(gameOverText);
+    
+    const pauseText = createSvgElement(svg.namespaceURI, "text", {
+        x: `${Viewport.CANVAS_WIDTH / 2}`,
+        y: `${Viewport.CANVAS_HEIGHT / 2}`,
+        "text-anchor": "middle",
+        fill: "red",
+        "font-size": "32px",
+        "font-weight": "bold",
+        visibility: "hidden",
+    });
+    pauseText.textContent = "Pause - Press P to Resume";
+    svg.appendChild(pauseText);
 
     // Dynamic Element Cache: Stores SVGGElement instances mapped by Target ID
     const targetMap = new Map<string, SVGGElement>();
@@ -299,7 +323,10 @@ const render = (): ((s: State) => void) => {
         });
 
         // Handle Game Over Visibility
+
         gameOverText.setAttribute("visibility", s.gameEnd ? "visible" : "hidden");
+
+        pauseText.setAttribute("visibility", s.gamePause ? "visible" : "hidden");
     };
 };
 
