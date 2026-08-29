@@ -24,8 +24,6 @@ import {
     map,
     filter,
     merge,
-    reduce,
-    Subscription,
     of,
     expand,
     timer

@@ -1,5 +1,4 @@
-import { filter } from 'rxjs';
-import {Viewport, TargetConfig, Constants, BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle} from './types';  
+import {TargetConfig, Constants, BitIndex, Target, State, Action} from './types';  
 import { calculateSpeedOverScore, calculateSpeedOverTime, Vec } from './util';
 
 export {bin2dec, reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart, Pause}
