@@ -1,5 +1,5 @@
 import {TargetConfig, Constants, BitIndex, Target, State, Action} from './types';  
-import { calculateSpeedOverScore, calculateSpeedOverTime, Vec } from './util';
+import { calculateSpeedOverScore, calculateSpeedOverTime, Vec, maxBy } from './util';
 
 export { bin2dec, reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart, Pause }
 
@@ -69,6 +69,8 @@ class Tick implements Action {
     constructor(public readonly elapsed: number) { }
 
     apply(s: State): State {
+        if (s.gameEnd || s.gamePause) return s;
+        
         const
             getScaledSpeed = calculateSpeedOverScore(Constants.BASE_SPEED)(Constants.SPEED_INCREMENT)(Constants.SCORE_INTERVAL),
 
