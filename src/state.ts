@@ -1,5 +1,5 @@
-import { Viewport, TargetConfig, Constants, BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle } from './types';
-import { calculateSpeedOverScore, calculateSpeedOverTime, maxBy, Vec } from './util';
+import {TargetConfig, Constants, BitIndex, Target, State, Action} from './types';  
+import { calculateSpeedOverScore, calculateSpeedOverTime, Vec } from './util';
 
 export { bin2dec, reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart, Pause }
 
