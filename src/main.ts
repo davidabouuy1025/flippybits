@@ -87,7 +87,7 @@ export const state$ = (): Observable<State> => {
 
                 const movementConfig: TargetMovementConfig = isStepper
                     ? { kind: 'STEPPER', stepDistance: 30 }
-                    : { kind: 'SMOOTH', speedPxPerTick: 40 };
+                    : { kind: 'SMOOTH'};
 
                 const target: Target = {
                     pos: new Vec(x, 0),

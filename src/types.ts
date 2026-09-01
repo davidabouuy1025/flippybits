@@ -12,13 +12,10 @@ type ObjectId = Readonly<{ id: string, createTime: number }>;
 
 type Rectangle = Readonly<{ pos: Vec }>;
 
-type MovementStrategy =
-    (deltaMs: number) =>
-        (elapsedMs: number) =>
-            (currentY: number) => number;
+type MovementStrategy = (currentY: number) => number;
 
 type TargetMovementConfig =
-    | { readonly kind: 'SMOOTH'; readonly speedPxPerTick: number }
+    | { readonly kind: 'SMOOTH'; }
     | { readonly kind: 'STEPPER'; readonly stepDistance: number };
 
 type TargetDetails = Readonly<{
@@ -68,7 +65,7 @@ const Constants = {
     TICK_RATE_MS: 60,
     TICK_TO_TIME_CONSTANT: 3.5,
 
-    BASE_SPEED: 1,
+    BASE_SPEED: 0.5,
     SPEED_INCREMENT: 0.25,
     SCORE_INTERVAL: 5,
 

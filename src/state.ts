@@ -7,16 +7,15 @@ export { reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart, Pause }
 export const advanceTarget =
     (currentTimeSec: number) =>
         (score: number) =>
-            (deltaMs: number) =>
-                (target: Target): Target => {
-                    const strategy = resolveStrategy(target)(currentTimeSec)(score);
-                    const nextY = strategy(deltaMs)(deltaMs)(target.pos.y);
+            (target: Target): Target => {
+                const strategy = resolveStrategy(target)(currentTimeSec)(score);
+                const nextY = strategy(target.pos.y);
 
-                    return {
-                        ...target,
-                        pos: new Vec(target.pos.x, nextY)
-                    };
+                return {
+                    ...target,
+                    pos: new Vec(target.pos.x, nextY)
                 };
+            };
 
 const initialState: State = {
     time: 0,
@@ -60,7 +59,7 @@ class Tick implements Action {
         const currentTimeSec = s.time + 1;
 
         const updatedTargetList = s.targets.map(
-            advanceTarget(currentTimeSec)(s.score)(Constants.TICK_RATE_MS)
+            advanceTarget(currentTimeSec)(s.score)
         );
 
         const movingTargets: State = { ...s, targets: updatedTargetList };

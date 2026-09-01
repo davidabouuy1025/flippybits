@@ -19,9 +19,9 @@ export const bin2dec = (bits: ReadonlyArray<number>): number =>
  * @returns Curried function calculating updated Y position based on tick delta.
  */
 export const smoothMovement =
-  (speedPxPerTick: number): MovementStrategy =>
-    (_deltaMs) => (tickDeltaMs) => (currentY) =>
-      currentY + speedPxPerTick * (tickDeltaMs / 1000);
+  (totalSpeed: number): MovementStrategy =>
+    (currentY) =>
+      currentY + totalSpeed;
 
 /**
  * Checks if num1 is evenly divisible by num2.
@@ -43,7 +43,7 @@ const modulus =
 export const stepMovement =
   (timeCreated: number) =>
     (timeCurrent: number): MovementStrategy =>
-      (_deltaMs) => (_elapsedMs) => (initialY) => {
+      (initialY) => {
         const nextStep = Constants.STEEP_TARGET_DROP_Y * modulus(timeCurrent - timeCreated)(Constants.TIME_PRIME)
         return initialY + (nextStep);
       };
@@ -64,11 +64,10 @@ export const resolveStrategy =
 
         switch (target.targetKind.kind) {
           case 'STEPPER':
-            console.log(currentTimeSec, target.createTime)
             return stepMovement(target.createTime)(currentTimeSec);
           case 'SMOOTH':
           default:
-            return smoothMovement(target.targetKind.speedPxPerTick + totalSpeed);
+            return smoothMovement(totalSpeed);
         }
       };
 
