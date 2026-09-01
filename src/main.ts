@@ -29,11 +29,11 @@ import {
     timer
 } from "rxjs";
 
-import { BitIndex, Target, State, Action, Viewport, TargetConfig, Constants } from './types';
+import { BitIndex, Target, State, Action, Viewport, TargetConfig, Constants, TargetMovementConfig } from './types';
 
 import { initialState, Tick, FlipBit, SpawnTarget, Restart, reduceState, bin2dec, Pause } from './state'
 
-import { generateRandomInt, generateTargetParams, RNG, Vec } from "./util";
+import { formatSecondsToMMSS, generateRandomInt, generateTargetParams, RNG, Vec } from "./util";
 
 // Observables
 export const state$ = (): Observable<State> => {
@@ -49,10 +49,8 @@ export const state$ = (): Observable<State> => {
         filter(({ repeat }) => !repeat),
         filter(({ code }) => code.startsWith('Digit') || code === 'KeyR'),
         map(({ code }) => {
-            if (code === 'KeyR') return new Restart();
-            // Convert 'Digit1' -> 0, 'Digit8' -> 7
             const index = (Number(code.replace('Digit', '')) - 1) as BitIndex;
-            return new FlipBit(index);
+            return (code === 'KeyR') ? new Restart() : new FlipBit(index);
         })
     );
 
@@ -83,13 +81,22 @@ export const state$ = (): Observable<State> => {
 
                 const { val, x, hex, nextSeed } = generateTargetParams(seed, maxX);
 
+                const typeRes = generateRandomInt(0)(100)(nextSeed);
+
+                const isStepper = typeRes.value < 35;
+
+                const movementConfig: TargetMovementConfig = isStepper
+                    ? { kind: 'STEPPER', stepDistance: 30 }
+                    : { kind: 'SMOOTH', speedPxPerSec: 40 };
+
                 const target: Target = {
-                id: `target-${elapsed}-${nextSeed}`,
-                createTime: elapsed,
-                pos: new Vec(x, 0),
-                viewType: 'bits',
-                value: val,
-                hex: hex,
+                    pos: new Vec(x, 0),
+                    id: `target-${elapsed}-${nextSeed}`,
+                    createTime: 0,
+                    viewType: 'bits',
+                    targetKind: movementConfig,
+                    value: val,
+                    hex: hex,
                 };
 
                 return new SpawnTarget(target);
@@ -204,22 +211,34 @@ const render = (): ((s: State) => void) => {
 
     // 2. Static Setup: Score Text
     const scoreText = createSvgElement(svg.namespaceURI, "text", {
-        x: "20",
-        y: "30",
-        fill: "white",
+        x: "15",
+        y: "40",
+        fill: "black",
         "font-size": "20px",
         "font-family": "sans-serif",
     });
     svg.appendChild(scoreText);
 
     const currentValue = createSvgElement(svg.namespaceURI, 'text', {
-        x: "20",
+        x: "15",
         y: "80",
-        fill: "white",
+        fill: "black",
         "font-size": "20px",
         "font-family": "sans-serif",
     });
     svg.appendChild(currentValue);
+
+    const svg1 = document.querySelector("#svgEffect") as SVGSVGElement;
+
+    const timeText = createSvgElement(svg1.namespaceURI, "text", {
+        x: "15",
+        y: "110",
+        fill: "#000000",
+        "font-size": "45",
+        "font-family": "monospace",
+        "font-weight": "bold",
+    });
+    svg1.appendChild(timeText);
 
     // 3. Static Setup: Text Overlay
     const startText = createSvgElement(svg.namespaceURI, "text", {
@@ -270,9 +289,11 @@ const render = (): ((s: State) => void) => {
                 "fill", bitValue === 1 ? "#81c784" : "#ef9a9a");
         });
 
+        // Update Time Display
+        timeText.textContent = `TIME: ${formatSecondsToMMSS(s.time)}`;
+
         // Update Score
         scoreText.textContent = `Score: ${s.score}`;
-
         currentValue.textContent = `Value: ${bin2dec(s.bits)}`;
 
         // Reconcile Targets (Add / Update / Remove)
@@ -292,13 +313,15 @@ const render = (): ((s: State) => void) => {
             if (!g) {
                 g = createSvgElement(svg.namespaceURI, "g") as SVGGElement;
 
+                const isStepper = t.targetKind.kind === 'STEPPER';
+
                 const rect = createSvgElement(svg.namespaceURI, "rect", {
                     width: `${TargetConfig.WIDTH}`,
                     height: `${TargetConfig.HEIGHT}`,
                     rx: "6",
-                    fill: "white",
-                    stroke: "black",
-                    "stroke-width": "2",
+                    fill: isStepper ? "#fff3e0" : "white",
+                    stroke: isStepper ? "#e65100" : "black",
+                    "stroke-width": isStepper ? "2.5" : "2",
                 });
 
                 const text = createSvgElement(svg.namespaceURI, "text", {

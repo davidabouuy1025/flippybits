@@ -1,7 +1,7 @@
-import {Vec} from './util'
+import { Vec } from './util'
 
-export type {BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle, Key, Event}
-export {Viewport, TargetConfig, Constants}
+export type { BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle, Key, Event, MovementStrategy, TargetMovementConfig }
+export { Viewport, TargetConfig, Constants }
 
 // Type
 type BitIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -10,10 +10,20 @@ type ViewType = 'bits' | 'hex';
 
 type ObjectId = Readonly<{ id: string, createTime: number }>;
 
-type Rectangle = Readonly<{ pos: Vec}>;
+type Rectangle = Readonly<{ pos: Vec }>;
+
+type MovementStrategy =
+    (deltaMs: number) =>
+        (elapsedMs: number) =>
+            (currentY: number) => number;
+
+type TargetMovementConfig =
+    | { readonly kind: 'SMOOTH'; readonly speedPxPerSec: number }
+    | { readonly kind: 'STEPPER'; readonly stepDistance: number };
 
 type TargetDetails = Readonly<{
     viewType: ViewType;
+    targetKind: TargetMovementConfig;
     value: number; // Decimal value (0 - 255)
     hex: string; // Hexadecimal string representation (e.g. "FF")
 }>;
@@ -55,11 +65,14 @@ const Constants = {
     DIGIT_COUNT: 8,
     SCORE_INCREMENT: 1,
 
-    TICK_RATE_MS: 50, // Might need to change this!,
+    TICK_RATE_MS: 60, // Might need to change this!,
 
     BASE_SPEED: 1,
     SPEED_INCREMENT: 0.25,
     SCORE_INTERVAL: 5,
+
+    TIME_PRIME: 13,
+    STEEP_TARGET_DROP_Y: 30
 } as const;
 
 interface Action {

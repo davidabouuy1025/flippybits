@@ -1,13 +1,68 @@
-export {Vec, RNG}
+import { MovementStrategy, TargetMovementConfig, Constants, Target } from "./types";
+
+export { Vec, RNG }
+
+export const smoothMovement =
+  (speedPxPerSec: number): MovementStrategy =>
+    (_deltaMs) => (tickDeltaMs) => (currentY) =>
+      currentY + speedPxPerSec * (tickDeltaMs / 1000);
+
+const modulus =
+  (num1: number) =>
+    (num2: number) =>
+      Math.floor(num1 % num2) == 0 ? 1 : 0
+
+export const stepMovement =
+  (timeCreated: number) =>
+    (timeCurrent: number) =>
+      (stepIntervalMs: number): MovementStrategy =>
+        (_deltaMs) => (elapsedMs) => (initialY) => {
+          const nextStep = Constants.STEEP_TARGET_DROP_Y * modulus(timeCurrent-timeCreated)(Constants.TIME_PRIME)
+          return initialY + (nextStep);
+        };
+
+export const resolveStrategy =
+  (target: Target) =>
+    (currentTimeSec: number) =>
+      (score: number): MovementStrategy => {
+        const speedFromScore = calculateSpeedOverScore(Constants.BASE_SPEED)(Constants.SPEED_INCREMENT)(Constants.SCORE_INTERVAL)(score);
+        const speedFromTime = calculateSpeedOverTime(currentTimeSec);
+        const totalSpeed = speedFromScore + speedFromTime;
+
+        switch (target.targetKind.kind) {
+          case 'STEPPER':
+            console.log(currentTimeSec, target.createTime)
+            return stepMovement(target.createTime)(currentTimeSec)(1000);
+          case 'SMOOTH':
+          default:
+            return smoothMovement(target.targetKind.speedPxPerSec + totalSpeed);
+        }
+      };
+
+/**
+ * Pure HOF: Formats raw seconds into an MM:SS time string.
+ */
+export const formatSecondsToMMSS = (totalSeconds: number): string => {
+  const tickTimeConstant = 3.5;
+  const mins = Math.floor(tickTimeConstant * totalSeconds / 60).toString().padStart(2, '0');
+  const secs = Math.floor(tickTimeConstant * totalSeconds % 60).toString().padStart(2, '0');
+  return `${mins}:${secs}`;
+};
+
+/**
+ * Pure HOF: Formats numeric score into a padded score string.
+ */
+export const formatScoreDisplay = (score: number): string =>
+  `SCORE: ${String(score).padStart(4, '0')}`;
 
 export const maxBy = <T>(
-    array: readonly T[], 
-    keyFn: (item: T) => number
-): T | null => 
-    array.reduce<T | null>(
-        (acc, item) => (!acc || keyFn(item) > keyFn(acc) ? item : acc),
-        null
-    );
+  array: readonly T[],
+  keyFn: (item: T) => number
+): T | null =>
+  array.reduce<T | null>(
+    (acc, item) => (!acc || keyFn(item) > keyFn(acc) ? item : acc),
+    null
+  );
 
 /**
  * calculateSpeedOverScore()
@@ -19,12 +74,12 @@ export const maxBy = <T>(
  * @param scoreStep
  * @param currentScore
  */
-export const calculateSpeedOverScore = 
+export const calculateSpeedOverScore =
   (baseSpeed: number) =>
     (speedStep: number) =>
       (scoreStep: number) =>
         (currentScore: number): number =>
-          baseSpeed + Math.floor(currentScore/scoreStep) * speedStep;
+          baseSpeed + Math.floor(currentScore / scoreStep) * speedStep;
 
 /**
  * calculateSpeedOverTime()
@@ -35,18 +90,18 @@ export const calculateSpeedOverScore =
  * @param currentSpeed 
  * @returns 
  */
-export const calculateSpeedOverTime = 
+export const calculateSpeedOverTime =
   (currentTime: number): number =>
-    2 * (1 - Math.E**(-0.005*currentTime));
+    2 * (1 - Math.E ** (-0.005 * currentTime));
 
 export type RandomResult<T> = Readonly<{
-    value: T,
-    nextSeed: number
+  value: T,
+  nextSeed: number
 }>;
 
-export const generateRandomInt = 
-  (min: number) => 
-    (max: number) => 
+export const generateRandomInt =
+  (min: number) =>
+    (max: number) =>
       (seed: number): RandomResult<number> => {
         const nextSeed = RNG.hash(seed);
         // Hash is in [0, 0x80000000), scale normalized ratio to [min, max)
@@ -57,7 +112,7 @@ export const generateRandomInt =
 export const generateTargetParams = (seed: number, maxX: number) => {
   const valRes = generateRandomInt(0)(16)(seed);              // Target value 0-15
   const xRes = generateRandomInt(0)(maxX)(valRes.nextSeed);   // Position X
-  
+
   return {
     val: valRes.value,
     x: xRes.value,
@@ -67,35 +122,35 @@ export const generateTargetParams = (seed: number, maxX: number) => {
 };
 
 abstract class RNG {
-    // LCG using GCC's constants
-    private static m = 0x80000000; // 2**31
-    private static a = 1103515245;
-    private static c = 12345;
+  // LCG using GCC's constants
+  private static m = 0x80000000; // 2**31
+  private static a = 1103515245;
+  private static c = 12345;
 
-    /**
-     * Call `hash` repeatedly to generate the sequence of hashes.
-     * @param seed 
-     * @returns a hash of the seed
-     */
-    public static hash = (seed: number) => (RNG.a * seed + RNG.c) % RNG.m;
+  /**
+   * Call `hash` repeatedly to generate the sequence of hashes.
+   * @param seed 
+   * @returns a hash of the seed
+   */
+  public static hash = (seed: number) => (RNG.a * seed + RNG.c) % RNG.m;
 
-    /**
-     * Takes hash value and scales it to the range [-1, 1]
-     */
-    public static scale = (hash: number) => (2 * hash) / (RNG.m - 1) - 1;
+  /**
+   * Takes hash value and scales it to the range [-1, 1]
+   */
+  public static scale = (hash: number) => (2 * hash) / (RNG.m - 1) - 1;
 }
 
 class Vec {
-    constructor(
-        public readonly x: number = 0, 
-        public readonly y: number = 0
-    ) { }
+  constructor(
+    public readonly x: number = 0,
+    public readonly y: number = 0
+  ) { }
 
-    add = (b: Vec) => new Vec(this.x + b.x, this.y + b.y)
-    sub = (b: Vec) => this.add(b.scale(-1))
-    len = () => Math.sqrt(this.x * this.x + this.y * this.y)
-    scale = (s: number) => new Vec(this.x * s, this.y * s)
-    ortho = () => new Vec(this.y, -this.x)
+  add = (b: Vec) => new Vec(this.x + b.x, this.y + b.y)
+  sub = (b: Vec) => this.add(b.scale(-1))
+  len = () => Math.sqrt(this.x * this.x + this.y * this.y)
+  scale = (s: number) => new Vec(this.x * s, this.y * s)
+  ortho = () => new Vec(this.y, -this.x)
 
-    static Zero = new Vec();
+  static Zero = new Vec();
 }

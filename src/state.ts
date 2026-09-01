@@ -1,7 +1,22 @@
-import {TargetConfig, Constants, BitIndex, Target, State, Action} from './types';  
-import { calculateSpeedOverScore, calculateSpeedOverTime, Vec, maxBy } from './util';
+import { TargetConfig, Constants, BitIndex, Target, State, Action } from './types';
+import { calculateSpeedOverScore, calculateSpeedOverTime, Vec, maxBy, resolveStrategy } from './util';
 
 export { bin2dec, reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart, Pause }
+
+// state.ts
+export const advanceTarget =
+    (currentTimeSec: number) =>
+        (score: number) =>
+            (deltaMs: number) =>
+                (target: Target): Target => {
+                    const strategy = resolveStrategy(target)(currentTimeSec)(score);
+                    const nextY = strategy(deltaMs)(deltaMs)(target.pos.y);
+
+                    return {
+                        ...target,
+                        pos: new Vec(target.pos.x, nextY)
+                    };
+                };
 
 const initialState: State = {
     time: 0,
@@ -29,7 +44,7 @@ const computeSpeed = <TScore, TResult extends number>(
 };
 
 const findMovingTargets = (
-    s: State, 
+    s: State,
     speed: number
 ): State => ({
     ...s,
@@ -41,26 +56,26 @@ const findMovingTargets = (
 
 const findLowestTarget = (
     s: State
-) => 
+) =>
     maxBy(s.targets, target => target.pos.y);
 
 const checkBinaryMatched = (
-    s: State, 
+    s: State,
     lowestTarget: Target | null
-): boolean => 
+): boolean =>
     lowestTarget !== null && lowestTarget.value == bin2dec(s.bits);
 
 const filterTargetLeft = (
     targets: readonly Target[],
     lowestTarget: Target | null,
     binaryMatched: boolean
-): readonly Target[] => 
+): readonly Target[] =>
     binaryMatched && lowestTarget !== null
         ? targets.filter(eachTarget => eachTarget.id !== lowestTarget.id)
         : targets;
 ;
 
-const checkTargetTouched = (targets: readonly Target[]) => 
+const checkTargetTouched = (targets: readonly Target[]) =>
     targets.some(
         eachTarget => eachTarget.pos.y > TargetConfig.CHECK_LINE_Y
     );
@@ -68,39 +83,27 @@ const checkTargetTouched = (targets: readonly Target[]) =>
 class Tick implements Action {
     constructor(public readonly elapsed: number) { }
 
-    apply(s: State): State {        
-        const
-            getScaledSpeed = calculateSpeedOverScore(Constants.BASE_SPEED)(Constants.SPEED_INCREMENT)(Constants.SCORE_INTERVAL),
+    apply(s: State): State {
+        const currentTimeSec = s.time + 1;
 
-            finalSpeed = computeSpeed(
-                s.score,
-                s.time,
-                getScaledSpeed,
-                calculateSpeedOverTime
-            ),
+        const updatedTargetList = s.targets.map(
+            advanceTarget(currentTimeSec)(s.score)(Constants.TICK_RATE_MS)
+        );
 
-            // Filter available Targets
-            movingTargets: State = findMovingTargets(s, finalSpeed),
-
-            // Find the bottommost target 
-            lowestTarget: Target | null = findLowestTarget(movingTargets),
-
-            // Check if bottommost Target matches
-            binaryMatched = checkBinaryMatched(s, lowestTarget),
-
-            // Targets left available
-            targetsLeft = filterTargetLeft(movingTargets.targets, lowestTarget, binaryMatched),
-
-            // Check if any target touches the bottom of canvas
-            crossed = checkTargetTouched(targetsLeft);
+        const movingTargets: State = { ...s, targets: updatedTargetList };
+        const lowestTarget = findLowestTarget(movingTargets);
+        const binaryMatched = checkBinaryMatched(s, lowestTarget);
+        const targetsLeft = filterTargetLeft(movingTargets.targets, lowestTarget, binaryMatched);
+        const crossed = checkTargetTouched(targetsLeft);
 
         return (s.gameEnd || s.gamePause) ? s : {
             ...s,
             targets: targetsLeft,
             score: binaryMatched ? s.score + Constants.SCORE_INCREMENT : s.score,
-            time: this.elapsed,
+            // time: currentTimeSec, // Store clean elapsed time in seconds
+            time: s.time+1, // Store clean elapsed time in seconds
             gameEnd: crossed
-        }
+        };
     }
 }
 
@@ -127,10 +130,18 @@ class SpawnTarget implements Action {
     constructor(public readonly target: Target) { }
 
     apply(s: State): State {
-        return (s.gameEnd || s.gamePause) ? s : {
+        if (s.gameEnd || s.gamePause) return s;
+
+        // Stamp the target with current game time right when it enters state
+        const stampedTarget: Target = {
+            ...this.target,
+            createTime: s.time
+        };
+
+        return {
             ...s,
-            targets: [...s.targets, this.target]
-        }
+            targets: [...s.targets, stampedTarget]
+        };
     }
 }
 
