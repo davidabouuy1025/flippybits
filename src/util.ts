@@ -120,10 +120,10 @@ export const maxBy = <T>(
  */
 export const calculateSpeedOverScore =
   (baseSpeed: number) =>
-    (speedStep: number) =>
-      (scoreStep: number) =>
+    (speedIncrement: number) =>
+      (scoreInterval: number) =>
         (currentScore: number): number =>
-          baseSpeed + Math.floor(currentScore / scoreStep) * speedStep;
+          baseSpeed + Math.floor(currentScore / scoreInterval) * speedIncrement;
 
 /**
  * Computes exponential target drop speed scaling over elapsed time.
