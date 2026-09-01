@@ -18,7 +18,7 @@ type MovementStrategy =
             (currentY: number) => number;
 
 type TargetMovementConfig =
-    | { readonly kind: 'SMOOTH'; readonly speedPxPerSec: number }
+    | { readonly kind: 'SMOOTH'; readonly speedPxPerTick: number }
     | { readonly kind: 'STEPPER'; readonly stepDistance: number };
 
 type TargetDetails = Readonly<{

@@ -35,7 +35,7 @@ export const resolveStrategy =
             return stepMovement(target.createTime)(currentTimeSec)(1000);
           case 'SMOOTH':
           default:
-            return smoothMovement(target.targetKind.speedPxPerSec + totalSpeed);
+            return smoothMovement(target.targetKind.speedPxPerTick + totalSpeed);
         }
       };
 
