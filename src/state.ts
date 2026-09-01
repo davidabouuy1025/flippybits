@@ -1,7 +1,7 @@
 import { TargetConfig, Constants, BitIndex, Target, State, Action } from './types';
-import { calculateSpeedOverScore, calculateSpeedOverTime, Vec, maxBy, resolveStrategy } from './util';
+import { Vec, maxBy, resolveStrategy, bin2dec } from './util';
 
-export { bin2dec, reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart, Pause }
+export { reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart, Pause }
 
 // state.ts
 export const advanceTarget =
@@ -26,33 +26,6 @@ const initialState: State = {
     gamePause: false,
     gameEnd: false,
 };
-
-// Convert the player's 8-bit array into a base-10 number to check against target values.
-const bin2dec = (bits: ReadonlyArray<number>): number =>
-    bits.reduce((acc, curr, index) =>
-        acc + curr * (2 ** (7 - index)),
-        0
-    );
-
-const computeSpeed = <TScore, TResult extends number>(
-    score: TScore,
-    currentTime: number,
-    scoreSpeedFn: (score: TScore) => TResult,
-    timeSpeedFn: (time: number) => number
-): number => {
-    return timeSpeedFn(currentTime) + scoreSpeedFn(score);
-};
-
-const findMovingTargets = (
-    s: State,
-    speed: number
-): State => ({
-    ...s,
-    targets: s.targets.map(eachTarget => ({
-        ...eachTarget,
-        pos: new Vec(eachTarget.pos.x, eachTarget.pos.y + speed)
-    }))
-});
 
 const findLowestTarget = (
     s: State
@@ -101,7 +74,7 @@ class Tick implements Action {
             targets: targetsLeft,
             score: binaryMatched ? s.score + Constants.SCORE_INCREMENT : s.score,
             // time: currentTimeSec, // Store clean elapsed time in seconds
-            time: s.time+1, // Store clean elapsed time in seconds
+            time: s.time + 1, // Store clean elapsed time in seconds
             gameEnd: crossed
         };
     }

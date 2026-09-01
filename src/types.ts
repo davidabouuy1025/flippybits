@@ -65,7 +65,8 @@ const Constants = {
     DIGIT_COUNT: 8,
     SCORE_INCREMENT: 1,
 
-    TICK_RATE_MS: 60, // Might need to change this!,
+    TICK_RATE_MS: 60,
+    TICK_TO_TIME_CONSTANT: 3.5,
 
     BASE_SPEED: 1,
     SPEED_INCREMENT: 0.25,

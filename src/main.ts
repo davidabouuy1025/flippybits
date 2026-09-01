@@ -31,9 +31,9 @@ import {
 
 import { BitIndex, Target, State, Action, Viewport, TargetConfig, Constants, TargetMovementConfig } from './types';
 
-import { initialState, Tick, FlipBit, SpawnTarget, Restart, reduceState, bin2dec, Pause } from './state'
+import { initialState, Tick, FlipBit, SpawnTarget, Restart, reduceState, Pause } from './state'
 
-import { formatSecondsToMMSS, generateRandomInt, generateTargetParams, RNG, Vec } from "./util";
+import { formatSecondsToMMSS, generateRandomInt, generateTargetParams, Vec, bin2dec } from "./util";
 
 // Observables
 export const state$ = (): Observable<State> => {
@@ -290,7 +290,7 @@ const render = (): ((s: State) => void) => {
         });
 
         // Update Time Display
-        timeText.textContent = `TIME: ${formatSecondsToMMSS(s.time)}`;
+        timeText.textContent = `TIME: ${formatSecondsToMMSS(s.time*Constants.TICK_TO_TIME_CONSTANT)}`;
 
         // Update Score
         scoreText.textContent = `Score: ${s.score}`;
