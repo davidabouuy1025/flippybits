@@ -68,9 +68,7 @@ const checkTargetTouched = (targets: readonly Target[]) =>
 class Tick implements Action {
     constructor(public readonly elapsed: number) { }
 
-    apply(s: State): State {
-        if (s.gameEnd || s.gamePause) return s;
-        
+    apply(s: State): State {        
         const
             getScaledSpeed = calculateSpeedOverScore(Constants.BASE_SPEED)(Constants.SPEED_INCREMENT)(Constants.SCORE_INTERVAL),
 
@@ -96,7 +94,7 @@ class Tick implements Action {
             // Check if any target touches the bottom of canvas
             crossed = checkTargetTouched(targetsLeft);
 
-        return {
+        return (s.gameEnd || s.gamePause) ? s : {
             ...s,
             targets: targetsLeft,
             score: binaryMatched ? s.score + Constants.SCORE_INCREMENT : s.score,
@@ -110,8 +108,6 @@ class FlipBit implements Action {
     constructor(public readonly index: BitIndex) { }
 
     apply(s: State): State {
-        if (s.gameEnd || s.gamePause) return s;
-
         const
             newBits = s.bits.map(
                 (eachBit, bitIndex) =>
@@ -120,7 +116,7 @@ class FlipBit implements Action {
                         : eachBit
             )
 
-        return {
+        return (s.gameEnd || s.gamePause) ? s : {
             ...s,
             bits: newBits
         }
@@ -131,9 +127,7 @@ class SpawnTarget implements Action {
     constructor(public readonly target: Target) { }
 
     apply(s: State): State {
-        if (s.gameEnd || s.gamePause) return s;
-
-        return {
+        return (s.gameEnd || s.gamePause) ? s : {
             ...s,
             targets: [...s.targets, this.target]
         }
@@ -149,11 +143,7 @@ class Restart implements Action {
 
 class Pause implements Action {
     apply(s: State): State {
-        if (s.gameEnd) {
-            return s
-        }
-
-        return {
+        return s.gameEnd ? s : {
             ...s,
             gamePause: !s.gamePause,
         }
