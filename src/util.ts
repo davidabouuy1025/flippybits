@@ -167,7 +167,7 @@ export const generateRandomInt =
  * @returns Target parameters including decimal value, position X, hex string, and next seed.
  */
 export const generateTargetParams = (seed: number, maxX: number) => {
-  const valRes = generateRandomInt(0)(16)(seed);              // Target value 0-15
+  const valRes = generateRandomInt(0)(256)(seed);              // Change 256 to 16 for 4-bit playing
   const xRes = generateRandomInt(0)(maxX)(valRes.nextSeed);   // Position X
 
   return {

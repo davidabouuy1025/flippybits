@@ -135,14 +135,14 @@ const bringToForeground = (elem: SVGElement): void => {
     elem.parentNode?.appendChild(elem);
 };
 
-/**
- * Displays a SVG element on the canvas. Brings to foreground.
- * @param elem SVG element to display
- */
-const show = (elem: SVGElement): void => {
-    elem.setAttribute("visibility", "visible");
-    bringToForeground(elem);
-};
+// /**
+//  * Displays a SVG element on the canvas. Brings to foreground.
+//  * @param elem SVG element to display
+//  */
+// const show = (elem: SVGElement): void => {
+//     elem.setAttribute("visibility", "visible");
+//     bringToForeground(elem);
+// };
 
 /**
  * Hides a SVG element on the canvas.
