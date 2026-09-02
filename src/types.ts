@@ -40,8 +40,9 @@ type State = Readonly<{
     bits: ReadonlyArray<number>; // 8 bits: [0, 0, 0, 0, 0, 0, 0, 0]
     targets: ReadonlyArray<Target>;
     score: number;
-    gamePause: boolean;
-    gameEnd: boolean;
+    gamePause: boolean,
+    gameEnd: boolean,
+    isDoublePoint: boolean,
 }>;
 
 /** Keyboard input keys handled by the game. */
@@ -69,6 +70,10 @@ const TargetConfig = {
 const Constants = {
     DIGIT_COUNT: 8,
     SCORE_INCREMENT: 1,
+    BONUS_SCORE: 1,
+    BONUS_SCORE_TIME_LIMIT: 3000,
+    BONUS_SCORE_COOLDOWN: 5000,
+    BONUS_SCORE_MIN_COUNT: 3,
 
     TICK_RATE_MS: 60,
     TICK_TO_TIME_CONSTANT: 3.5,

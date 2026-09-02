@@ -80,7 +80,7 @@ svg rect {
     margin-top: 1em;
 }
 
-#info > .text {
+#info>.text {
     font-weight: bold;
 }
 

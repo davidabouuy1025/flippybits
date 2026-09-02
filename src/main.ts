@@ -26,17 +26,29 @@ import {
     merge,
     of,
     expand,
-    timer
+    timer,
+    bufferCount,
+    bufferTime,
+    takeUntil,
+    shareReplay,
+    pairwise,
+    Subject,
+    delay,
+    exhaustMap,
+    concat,
+    ignoreElements
 } from "rxjs";
 
 import { BitIndex, Target, State, Action, Viewport, TargetConfig, Constants, TargetMovementConfig } from './types';
 
-import { initialState, Tick, FlipBit, SpawnTarget, Restart, reduceState, Pause } from './state'
+import { initialState, Tick, FlipBit, SpawnTarget, Restart, reduceState, Pause, StartBonusTrigger, EndBonusTrigger } from './state'
 
 import { formatSecondsToMMSS, generateRandomInt, generateTargetParams, Vec, bin2dec } from "./util";
 
 // Observables
 export const state$ = (): Observable<State> => {
+    const actions$ = new Subject<Action>;
+
     // Generate Tick action every 60ms for State updates
     const tick$ = interval(Constants.TICK_RATE_MS).pipe(
         map(
@@ -62,12 +74,12 @@ export const state$ = (): Observable<State> => {
         map(index => new FlipBit(index))
     );
 
-    const spawnTarget$ = of({seed: 12345, elapsed: 0}).pipe(
+    const spawnTarget$ = of({ seed: 12345, elapsed: 0 }).pipe(
         // Map {seed, elapsed} to Observable
         expand(({ seed, elapsed }) => {
             // Generate next Target within 1~3 seconds
             const delayRes = generateRandomInt(1000)(3000)(seed);
-            
+
             return timer(delayRes.value).pipe(
                 map(() => ({
                     seed: delayRes.nextSeed,
@@ -76,53 +88,98 @@ export const state$ = (): Observable<State> => {
             );
         }),
         filter(({ elapsed }) => elapsed > 0),
-            map(({ seed, elapsed }) => {
-                const maxX = Viewport.CANVAS_WIDTH - TargetConfig.WIDTH;
+        map(({ seed, elapsed }) => {
+            const maxX = Viewport.CANVAS_WIDTH - TargetConfig.WIDTH;
 
-                const { val, x, hex, nextSeed } = generateTargetParams(seed, maxX);
+            const { val, x, hex, nextSeed } = generateTargetParams(seed, maxX);
 
-                const typeRes = generateRandomInt(0)(100)(nextSeed);
+            const typeRes = generateRandomInt(0)(100)(nextSeed);
 
-                const isStepper = typeRes.value < 35;
+            const isStepper = typeRes.value < 35;
 
-                const movementConfig: TargetMovementConfig = isStepper
-                    ? { kind: 'STEPPER', stepDistance: 30 }
-                    : { kind: 'SMOOTH'};
+            const movementConfig: TargetMovementConfig = isStepper
+                ? { kind: 'STEPPER', stepDistance: 30 }
+                : { kind: 'SMOOTH' };
 
-                const target: Target = {
-                    pos: new Vec(x, 0),
-                    id: `target-${elapsed}-${nextSeed}`,
-                    createTime: 0,
-                    viewType: 'bits',
-                    targetKind: movementConfig,
-                    value: val,
-                    hex: hex,
-                };
+            const target: Target = {
+                pos: new Vec(x, 0),
+                id: `target-${elapsed}-${nextSeed}`,
+                createTime: 0,
+                viewType: 'bits',
+                targetKind: movementConfig,
+                value: val,
+                hex: hex,
+            };
 
-                return new SpawnTarget(target);
-            })
-        );
+            return new SpawnTarget(target);
+        })
+    );
 
     const pause$ = fromEvent<KeyboardEvent>(
         document,
         'keydown'
     ).pipe(
-        filter(({code}) => code === "KeyP" || code === "Escape"),
+        filter(({ code }) => code === "KeyP" || code === "Escape"),
         map(() => new Pause())
-    )
+    );
 
-    const actions$: Observable<Action> = merge(
+    const state$: Observable<State> = actions$.pipe(
+        scan(reduceState, initialState),
+        shareReplay(1)
+    );
+
+    // Return "CORRECT_MATCH" when user has correct bit
+    const matchSuccess$ = state$.pipe(
+        map(s => s.score),
+        pairwise(),
+        filter(([prev, curr]) => curr > prev),
+        map(() => "CORRECT_MATCH" as const)
+    );
+
+    // Return START_BONUS when 3 "CORRECT_MATCH" is received
+    const bonusTrigger$ = matchSuccess$.pipe(
+        bufferCount(Constants.BONUS_SCORE_MIN_COUNT),
+        map(() => "START_BONUS" as const)
+    );
+
+    // Control bonus start and end
+
+    // create new object of startbonustrigger (double point)
+    // for every correct, 
+    const bonusPeriod$ = bonusTrigger$.pipe(
+        exhaustMap(() =>
+            concat(
+                merge(
+                    of(new StartBonusTrigger()),
+
+                    matchSuccess$.pipe(
+                        bufferTime(Constants.TICK_RATE_MS),
+                        filter(matches => matches.length > 0),
+                        map(() => new StartBonusTrigger()),
+                        takeUntil(timer(Constants.BONUS_SCORE_TIME_LIMIT))
+                    ),
+
+                    timer(Constants.BONUS_SCORE_TIME_LIMIT).pipe(
+                        map(() => new EndBonusTrigger()
+                        )
+                    )
+                ),
+                timer(Constants.BONUS_SCORE_COOLDOWN).pipe(
+                    ignoreElements()
+                ))
+        )
+    );
+
+    merge(
         tick$,
         keyFlip$,
         mouseFlip$,
         spawnTarget$,
-        pause$
-    );
+        pause$,
+        bonusPeriod$
+    ).subscribe(action => actions$.next(action));
 
-    const state$: Observable<State> = actions$.pipe(
-        scan(reduceState, initialState)
-    );
-    return state$
+    return state$;
 }
 
 // Rendering (side effects)
@@ -181,7 +238,6 @@ const render = (): ((s: State) => void) => {
         `0 0 ${Viewport.CANVAS_WIDTH} ${Viewport.CANVAS_HEIGHT}`,
     );
 
-    // 1. Static Setup: Create bit toggle UI once
     const digitWidth = Viewport.CANVAS_WIDTH / Constants.DIGIT_COUNT;
     const bitElements = Array.from({ length: Constants.DIGIT_COUNT }).map((_, i) => {
         const rect = createSvgElement(svg.namespaceURI, "rect", {
@@ -209,7 +265,6 @@ const render = (): ((s: State) => void) => {
         return { rect, text };
     });
 
-    // 2. Static Setup: Score Text
     const scoreText = createSvgElement(svg.namespaceURI, "text", {
         x: "15",
         y: "40",
@@ -229,7 +284,6 @@ const render = (): ((s: State) => void) => {
     svg.appendChild(currentValue);
 
     const svg1 = document.querySelector("#svgEffect") as SVGSVGElement;
-
     const timeText = createSvgElement(svg1.namespaceURI, "text", {
         x: "15",
         y: "110",
@@ -240,7 +294,17 @@ const render = (): ((s: State) => void) => {
     });
     svg1.appendChild(timeText);
 
-    // 3. Static Setup: Text Overlay
+    const svg2 = document.querySelector("#svgEffects") as SVGGElement;
+    const effectText = createSvgElement(svg2.namespaceURI, "text", {
+        x: "15",
+        y: "110",
+        fill: "#000000",
+        "font-size": "20",
+        "font-family": "monospace",
+        "font-weight": "",
+    });
+    svg2.appendChild(effectText);
+
     const startText = createSvgElement(svg.namespaceURI, "text", {
         x: `${Viewport.CANVAS_WIDTH / 2}`,
         y: `${Viewport.CANVAS_HEIGHT / 2}`,
@@ -264,7 +328,7 @@ const render = (): ((s: State) => void) => {
     });
     gameOverText.textContent = "GAME OVER - Press R to Restart";
     svg.appendChild(gameOverText);
-    
+
     const pauseText = createSvgElement(svg.namespaceURI, "text", {
         x: `${Viewport.CANVAS_WIDTH / 2}`,
         y: `${Viewport.CANVAS_HEIGHT / 2}`,
@@ -290,11 +354,21 @@ const render = (): ((s: State) => void) => {
         });
 
         // Update Time Display
-        timeText.textContent = `TIME: ${formatSecondsToMMSS(s.time*Constants.TICK_TO_TIME_CONSTANT)}`;
+        timeText.textContent = `TIME: ${formatSecondsToMMSS(s.time * Constants.TICK_TO_TIME_CONSTANT)}`;
 
         // Update Score
         scoreText.textContent = `Score: ${s.score}`;
         currentValue.textContent = `Value: ${bin2dec(s.bits)}`;
+
+
+        if (s.isDoublePoint) {
+            console.log(s.time)
+        }
+
+        effectText.textContent =
+            (s.isDoublePoint)
+                ? "x2 POINTS"
+                : "";
 
         // Reconcile Targets (Add / Update / Remove)
         const currentTargetIds = new Set(s.targets.map(t => t.id));

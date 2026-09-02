@@ -1,7 +1,7 @@
 import { TargetConfig, Constants, BitIndex, Target, State, Action } from './types';
 import { Vec, maxBy, resolveStrategy, bin2dec } from './util';
 
-export { reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart, Pause }
+export { reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart, Pause, StartBonusTrigger, EndBonusTrigger, CooldownBonusTrigger }
 
 // state.ts
 
@@ -33,6 +33,7 @@ const initialState: State = {
     score: 0,
     gamePause: false,
     gameEnd: false,
+    isDoublePoint: false
 };
 
 /**
@@ -167,6 +168,31 @@ class SpawnTarget implements Action {
             ...s,
             targets: [...s.targets, stampedTarget]
         };
+    }
+}
+
+class StartBonusTrigger implements Action {
+    apply(s: State){
+        return (s.gameEnd || s.gamePause) ? s : {
+            ...s,
+            score: s.score + Constants.BONUS_SCORE,
+            isDoublePoint: !s.isDoublePoint
+        }
+    }
+}
+
+class EndBonusTrigger implements Action {
+    apply(s: State){
+        return {
+            ...s,
+            isDoublePoint: !s.isDoublePoint
+        };
+    }
+}
+
+class CooldownBonusTrigger implements Action {
+    apply(s: State){
+        return s
     }
 }
 
