@@ -115,7 +115,7 @@ const Constants = {
     /**
      * BASE_SPEED = Initial speed of normal FallenBit dropping
      */
-    BASE_SPEED: 0.25,
+    BASE_SPEED: 0.5,
     /**
      * SPEED_INCREMENT = How fast does speed fasten over score
      */

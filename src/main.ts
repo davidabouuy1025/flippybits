@@ -25,7 +25,8 @@ import {
     exhaustMap,
     concat,
     ignoreElements,
-    defer
+    defer,
+    takeWhile
 } from "rxjs";
 
 import { BitIndex, Target, State, Action, Viewport, TargetConfig, Constants, TargetMovementConfig } from './types';
@@ -169,7 +170,8 @@ export const state$ = (): Observable<State> => {
 
     const state$: Observable<State> = actions$.pipe(
         scan(reduceState, initialState),
-        shareReplay(1)
+        takeWhile(s => !s.gameEnd, true),
+        shareReplay(1),
     );
 
     return state$;

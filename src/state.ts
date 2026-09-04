@@ -107,6 +107,8 @@ class Tick implements Action {
             advanceTarget(currentTimeSec)(s.score)
         );
 
+        console.log('hi')
+
         const movingTargets: State = { ...s, targets: updatedTargetList };
         const lowestTarget = findLowestTarget(movingTargets);
         const binaryMatched = checkBinaryMatched(s, lowestTarget);
