@@ -1,17 +1,6 @@
 /**
- * Inside this file you will use the classes and functions from rx.js
- * to add visuals to the svg element in index.html, animate them, and make them interactive.
- *
- * Study and complete the tasks in observable exercises first to get ideas.
- *
- * Course Notes showing Asteroids in FRP: https://tgdwyer.github.io/asteroids/
- *
- * You will be marked on your functional programming style
- * as well as the functionality that you implement.
- *
- * Document your code!
+ * Imports of utility functions, classes, constants needed for the game
  */
-
 import "./style.css";
 
 import {
@@ -33,10 +22,10 @@ import {
     shareReplay,
     pairwise,
     Subject,
-    delay,
     exhaustMap,
     concat,
-    ignoreElements
+    ignoreElements,
+    defer
 } from "rxjs";
 
 import { BitIndex, Target, State, Action, Viewport, TargetConfig, Constants, TargetMovementConfig } from './types';
@@ -45,18 +34,22 @@ import { initialState, Tick, FlipBit, SpawnTarget, Restart, reduceState, Pause, 
 
 import { formatSecondsToMMSS, generateRandomInt, generateTargetParams, Vec, bin2dec } from "./util";
 
-// Observables
+/**
+ * Main function block
+ * 
+ * @returns a stream of State
+ */
 export const state$ = (): Observable<State> => {
-    const actions$ = new Subject<Action>;
-
-    // Generate Tick action every 60ms for State updates
+    /** 
+     * Generate Tick class every 60ms 
+     */
     const tick$ = interval(Constants.TICK_RATE_MS).pipe(
-        map(
-            elapsed => new Tick(elapsed)
-        )
+        map(elapsed => new Tick(elapsed))
     );
 
-    // When users click keyboard keys
+    /**
+     * Flip bits when users click keyboard keys
+     */
     const keyFlip$ = fromEvent<KeyboardEvent>(document, 'keydown').pipe(
         filter(({ repeat }) => !repeat),
         filter(({ code }) => code.startsWith('Digit') || code === 'KeyR'),
@@ -66,7 +59,9 @@ export const state$ = (): Observable<State> => {
         })
     );
 
-    // When users click the SVG elements in canvas directly 
+    /**
+     * Flip bits when users click the SVG elements in canvas directly 
+     */
     const mouseFlip$ = fromEvent<MouseEvent>(document, 'click').pipe(
         map(event => event.target as HTMLElement),
         filter(target => target.hasAttribute('data-index')),
@@ -74,12 +69,13 @@ export const state$ = (): Observable<State> => {
         map(index => new FlipBit(index))
     );
 
+    /**
+     * Spawn targets with random bit value in a random 1-3s interval 
+     */
     const spawnTarget$ = of({ seed: 12345, elapsed: 0 }).pipe(
-        // Map {seed, elapsed} to Observable
+        // Random time
         expand(({ seed, elapsed }) => {
-            // Generate next Target within 1~3 seconds
             const delayRes = generateRandomInt(1000)(3000)(seed);
-
             return timer(delayRes.value).pipe(
                 map(() => ({
                     seed: delayRes.nextSeed,
@@ -87,14 +83,13 @@ export const state$ = (): Observable<State> => {
                 }))
             );
         }),
+        // Ensure elapsed passed from expand() is valid
         filter(({ elapsed }) => elapsed > 0),
+        // Random FallenBit (Normal/ Steep)
         map(({ seed, elapsed }) => {
             const maxX = Viewport.CANVAS_WIDTH - TargetConfig.WIDTH;
-
             const { val, x, hex, nextSeed } = generateTargetParams(seed, maxX);
-
             const typeRes = generateRandomInt(0)(100)(nextSeed);
-
             const isStepper = typeRes.value < 35;
 
             const movementConfig: TargetMovementConfig = isStepper
@@ -115,6 +110,9 @@ export const state$ = (): Observable<State> => {
         })
     );
 
+    /**
+     * Generate Pause class when certain keys are pressed
+     */
     const pause$ = fromEvent<KeyboardEvent>(
         document,
         'keydown'
@@ -123,64 +121,59 @@ export const state$ = (): Observable<State> => {
         map(() => new Pause())
     );
 
-    const state$: Observable<State> = actions$.pipe(
-        scan(reduceState, initialState),
-        shareReplay(1)
-    );
-
-    // Return "CORRECT_MATCH" when user has correct bit
-    const matchSuccess$ = state$.pipe(
+    /**
+     * Check if users has cleared the most bottom FallenBit
+     * 
+     * - every time when previous state$ is subscribe, only then this block 
+     */
+    const matchSuccess$ = defer(() => state$).pipe(
         map(s => s.score),
         pairwise(),
         filter(([prev, curr]) => curr > prev),
         map(() => "CORRECT_MATCH" as const)
     );
 
-    // Return START_BONUS when 3 "CORRECT_MATCH" is received
+    /**
+     * Return START_BONUS when required matches are received
+     */
     const bonusTrigger$ = matchSuccess$.pipe(
         bufferCount(Constants.BONUS_SCORE_MIN_COUNT),
         map(() => "START_BONUS" as const)
     );
 
-    // Control bonus start and end
-
-    // create new object of startbonustrigger (double point)
-    // for every correct, 
+    // Clean, precise bonus period: Start -> Wait duration -> End -> Cooldown
     const bonusPeriod$ = bonusTrigger$.pipe(
         exhaustMap(() =>
             concat(
-                merge(
-                    of(new StartBonusTrigger()),
+                of(new StartBonusTrigger()),
 
-                    matchSuccess$.pipe(
-                        bufferTime(Constants.TICK_RATE_MS),
-                        filter(matches => matches.length > 0),
-                        map(() => new StartBonusTrigger()),
-                        takeUntil(timer(Constants.BONUS_SCORE_TIME_LIMIT))
-                    ),
-
-                    timer(Constants.BONUS_SCORE_TIME_LIMIT).pipe(
-                        map(() => new EndBonusTrigger()
-                        )
-                    )
+                timer(Constants.BONUS_SCORE_TIME_LIMIT).pipe(
+                    map(() => new EndBonusTrigger())
                 ),
+
                 timer(Constants.BONUS_SCORE_COOLDOWN).pipe(
                     ignoreElements()
-                ))
+                )
+            )
         )
     );
 
-    merge(
+    const actions$: Observable<Action> = merge(
         tick$,
         keyFlip$,
         mouseFlip$,
         spawnTarget$,
         pause$,
         bonusPeriod$
-    ).subscribe(action => actions$.next(action));
+    );
+
+    const state$: Observable<State> = actions$.pipe(
+        scan(reduceState, initialState),
+        shareReplay(1)
+    );
 
     return state$;
-}
+};
 
 // Rendering (side effects)
 
@@ -359,11 +352,6 @@ const render = (): ((s: State) => void) => {
         // Update Score
         scoreText.textContent = `Score: ${s.score}`;
         currentValue.textContent = `Value: ${bin2dec(s.bits)}`;
-
-
-        if (s.isDoublePoint) {
-            console.log(s.time)
-        }
 
         effectText.textContent =
             (s.isDoublePoint)

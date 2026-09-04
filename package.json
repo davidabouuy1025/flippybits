@@ -8,7 +8,8 @@
         "test:ui": "vitest --ui",
         "test:run": "vitest run",
         "dev": "vite",
-        "build": "tsc && vite build"
+        "build": "tsc && vite build",
+        "generate-docs": "jsdoc -c jsdoc.json"
     },
     "dependencies": {
         "rxjs": "^7.8.2"
@@ -16,6 +17,8 @@
     "devDependencies": {
         "@types/node": "^24.0.10",
         "@vitest/ui": "^3.2.4",
+        "jsdoc": "^4.0.5",
+        "jsdoc-plugin-typescript": "^3.2.1",
         "prettier": "^3.6.2",
         "tsx": "^4.23.12",
         "typescript": "~5.8.3",

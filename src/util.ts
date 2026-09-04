@@ -44,7 +44,7 @@ export const stepMovement =
   (timeCreated: number) =>
     (timeCurrent: number): MovementStrategy =>
       (initialY) => {
-        const nextStep = Constants.STEEP_TARGET_DROP_Y * modulus(timeCurrent - timeCreated)(Constants.TIME_PRIME)
+        const nextStep = Constants.STEEP_TARGET_DROP_Y * modulus(timeCurrent - timeCreated)(Constants.STEEP_TARGET_TIME_PRIME)
         return initialY + (nextStep);
       };
 

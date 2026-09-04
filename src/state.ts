@@ -1,9 +1,22 @@
 import { TargetConfig, Constants, BitIndex, Target, State, Action } from './types';
 import { Vec, maxBy, resolveStrategy, bin2dec } from './util';
 
-export { reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart, Pause, StartBonusTrigger, EndBonusTrigger, CooldownBonusTrigger }
+export { reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart, Pause, StartBonusTrigger, EndBonusTrigger }
 
-// state.ts
+/** Initial default state configuration for starting or resetting the game. */
+const initialState: State = {
+    time: 0,
+    bits: [0, 0, 0, 0, 0, 0, 0, 0],
+    targets: [],
+    score: 0,
+    gamePause: false,
+    gameEnd: false,
+    isDoublePoint: false
+};
+
+// ////////////////////////
+// Falling Mechanism
+// ////////////////////////
 
 /**
  * Advances a single target's vertical position based on active movement strategies.
@@ -25,17 +38,6 @@ export const advanceTarget =
                 };
             };
 
-/** Initial default state configuration for starting or resetting the game. */
-const initialState: State = {
-    time: 0,
-    bits: [0, 0, 0, 0, 0, 0, 0, 0],
-    targets: [],
-    score: 0,
-    gamePause: false,
-    gameEnd: false,
-    isDoublePoint: false
-};
-
 /**
  * Finds the target positioned lowest vertically on the canvas.
  * @param s - The current game state.
@@ -55,8 +57,7 @@ const findLowestTarget = (
 const checkBinaryMatched = (
     s: State,
     lowestTarget: Target | null
-): boolean =>
-    lowestTarget !== null && lowestTarget.value == bin2dec(s.bits);
+): boolean => lowestTarget !== null && lowestTarget.value == bin2dec(s.bits);
 
 /**
  * Removes target from state list if binary match criteria is satisfied.
@@ -84,6 +85,10 @@ const checkTargetTouched = (targets: readonly Target[]) =>
     targets.some(
         eachTarget => eachTarget.pos.y > TargetConfig.CHECK_LINE_Y
     );
+
+// /////////////////////
+// Action Classes
+// /////////////////////
 
 /** Action executing a frame time tick, moving targets, and resolving match/collision states. */
 class Tick implements Action {
@@ -156,23 +161,30 @@ class SpawnTarget implements Action {
      * @returns Updated state containing new target.
      */
     apply(s: State): State {
-        if (s.gameEnd || s.gamePause) return s;
-
         // Stamp the target with current game time right when it enters state
         const stampedTarget: Target = {
             ...this.target,
             createTime: s.time
         };
 
-        return {
+        return (s.gameEnd || s.gamePause) ? s : {
             ...s,
             targets: [...s.targets, stampedTarget]
         };
     }
 }
 
+/**
+ * Start bonus score - 1 FallenBit for 2 scores
+ */
 class StartBonusTrigger implements Action {
-    apply(s: State){
+    /**
+     * Apply additional score and append to state array
+     * Reverse isDoublePoint to True 
+     * @param s - Current state.
+     * @returns Updated state with new score (double point added)
+     */
+    apply(s: State) {
         return (s.gameEnd || s.gamePause) ? s : {
             ...s,
             score: s.score + Constants.BONUS_SCORE,
@@ -181,22 +193,24 @@ class StartBonusTrigger implements Action {
     }
 }
 
+/**
+ * End bonus score - 1 FallenBit for 1 score
+ */
 class EndBonusTrigger implements Action {
-    apply(s: State){
-        return {
+    /**
+     * Stop adding addtional score
+     * Reverse isDoublePOint to False
+     * @param s 
+     * @returns 
+     */
+    apply(s: State) {
+        return (s.gameEnd || s.gamePause) ? s : {
             ...s,
             isDoublePoint: !s.isDoublePoint
         };
     }
 }
 
-class CooldownBonusTrigger implements Action {
-    apply(s: State){
-        return s
-    }
-}
-
-// _ is used to avoid TypeScript noUnusedParameters compiler warnings
 /** Action resetting game to starting parameters. */
 class Restart implements Action {
     /**
