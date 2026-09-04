@@ -107,8 +107,6 @@ class Tick implements Action {
             advanceTarget(currentTimeSec)(s.score)
         );
 
-        console.log('hi')
-
         const movingTargets: State = { ...s, targets: updatedTargetList };
         const lowestTarget = findLowestTarget(movingTargets);
         const binaryMatched = checkBinaryMatched(s, lowestTarget);
@@ -118,9 +116,8 @@ class Tick implements Action {
         return (s.gameEnd || s.gamePause) ? s : {
             ...s,
             targets: targetsLeft,
-            score: binaryMatched ? s.score + Constants.SCORE_INCREMENT : s.score,
-            time: currentTimeSec, // Store clean elapsed time in seconds
-            // time: s.time + 1, // Store clean elapsed time in seconds
+            score: binaryMatched ? s.score + Constants.SCORE_INCREMENT * (s.isDoublePoint ? 2 : 1) : s.score,
+            time: currentTimeSec,
             gameEnd: crossed
         };
     }
@@ -186,10 +183,9 @@ class StartBonusTrigger implements Action {
      * @param s - Current state.
      * @returns Updated state with new score (double point added)
      */
-    apply(s: State) {
+    apply(s: State): State {
         return (s.gameEnd || s.gamePause) ? s : {
             ...s,
-            score: s.score + Constants.BONUS_SCORE,
             isDoublePoint: !s.isDoublePoint
         }
     }
@@ -205,7 +201,7 @@ class EndBonusTrigger implements Action {
      * @param s 
      * @returns 
      */
-    apply(s: State) {
+    apply(s: State): State {
         return (s.gameEnd || s.gamePause) ? s : {
             ...s,
             isDoublePoint: !s.isDoublePoint

@@ -170,7 +170,6 @@ export const state$ = (): Observable<State> => {
 
     const state$: Observable<State> = actions$.pipe(
         scan(reduceState, initialState),
-        takeWhile(s => !s.gameEnd, true),
         shareReplay(1),
     );
 
@@ -178,31 +177,6 @@ export const state$ = (): Observable<State> => {
 };
 
 // Rendering (side effects)
-
-/**
- * Brings an SVG element to the foreground.
- * @param elem SVG element to bring to the foreground
- */
-const bringToForeground = (elem: SVGElement): void => {
-    elem.parentNode?.appendChild(elem);
-};
-
-// /**
-//  * Displays a SVG element on the canvas. Brings to foreground.
-//  * @param elem SVG element to display
-//  */
-// const show = (elem: SVGElement): void => {
-//     elem.setAttribute("visibility", "visible");
-//     bringToForeground(elem);
-// };
-
-/**
- * Hides a SVG element on the canvas.
- * @param elem SVG element to hide
- */
-const hide = (elem: SVGElement): void => {
-    elem.setAttribute("visibility", "hidden");
-};
 
 /**
  * Creates an SVG element with the given properties.
