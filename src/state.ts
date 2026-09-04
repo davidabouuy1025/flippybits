@@ -101,7 +101,7 @@ class Tick implements Action {
      * @returns Mutated state progression.
      */
     apply(s: State): State {
-        const currentTimeSec = s.time + 1;
+        const currentTimeSec = s.time + Constants.TICK_RATE_MS/1000;
 
         const updatedTargetList = s.targets.map(
             advanceTarget(currentTimeSec)(s.score)
@@ -117,8 +117,8 @@ class Tick implements Action {
             ...s,
             targets: targetsLeft,
             score: binaryMatched ? s.score + Constants.SCORE_INCREMENT : s.score,
-            // time: currentTimeSec, // Store clean elapsed time in seconds
-            time: s.time + 1, // Store clean elapsed time in seconds
+            time: currentTimeSec, // Store clean elapsed time in seconds
+            // time: s.time + 1, // Store clean elapsed time in seconds
             gameEnd: crossed
         };
     }

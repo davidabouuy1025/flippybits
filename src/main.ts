@@ -44,7 +44,7 @@ export const state$ = (): Observable<State> => {
      * Generate Tick class every 60ms 
      */
     const tick$ = interval(Constants.TICK_RATE_MS).pipe(
-        map(elapsed => new Tick(elapsed))
+        map(tickIndex => new Tick(tickIndex * (Constants.TICK_RATE_MS / 1000)))
     );
 
     /**
@@ -347,7 +347,7 @@ const render = (): ((s: State) => void) => {
         });
 
         // Update Time Display
-        timeText.textContent = `TIME: ${formatSecondsToMMSS(s.time * Constants.TICK_TO_TIME_CONSTANT)}`;
+        timeText.textContent = `TIME: ${formatSecondsToMMSS(s.time)}`;
 
         // Update Score
         scoreText.textContent = `Score: ${s.score}`;
