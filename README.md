@@ -1,5 +1,26 @@
 # Assignment 1
 
+## Game Features 
+### HD Extensions Requirements
+
+- Users can pause the game by clicking 'Key P' or 'Escape'
+- Unit tests are provided under `test/`
+- Special FallenBit - Steep Target may be spawned where instead of falling smoothly, it teleports downward with larger y distance with delay continuously
+- Special Effect - Double Score is applied after users solve 3 FallenBit correctly
+- Special Effect - The speed of FallenBit falling grows along users' score and time asurvived
+
+### Full Game Requirements
+
+- FallenBit are randomly spawned in the 1-3 seconds time interval
+- Users can restart the game by clicking 'Key R'
+- Users can view their score and the current value of their 8 bits
+- FallenBit will drop faster as users survive longer
+
+### Minimum Requirements
+
+- Users can flip digits by using mouse or keyboard clicking to control
+- Users need to resolve FallenBit before they reach the bottom of the screen, and multiple FallenBit may be spawned
+
 ## Usage
 
 Setup (requires node.js):
@@ -30,7 +51,7 @@ The configuration for this is set in `.prettierrc.json`. Feel free to change thi
 
 If you are using VS Code, you can also install the [Prettier extension](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode). This skeleton code is set up to automatically format your code on save. You can disable this in `.vscode/settings.json` by changing `"editor.formatOnSave": true` to `"editor.formatOnSave": false`.
 
-## Implementing features
+## Files Structure
 
 There are a few files you may wish to modify. The rest should **not** be modified as they are used for configuring the build.
 
