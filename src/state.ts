@@ -1,7 +1,29 @@
-import { TargetConfig, Constants, BitIndex, Target, State, Action } from './types';
-import { Vec, maxBy, resolveStrategy, bin2dec } from './util';
+import {
+    TargetConfig,
+    Constants,
+    BitIndex,
+    Target,
+    State,
+    Action
+} from './types';
+import {
+    Vec,
+    maxBy,
+    resolveStrategy,
+    bin2dec
+} from './util';
 
-export { reduceState, initialState, Tick, FlipBit, SpawnTarget, Restart, Pause, StartBonusTrigger, EndBonusTrigger }
+export {
+    reduceState,
+    initialState,
+    Tick,
+    FlipBit,
+    SpawnTarget,
+    Restart,
+    Pause,
+    StartBonusTrigger,
+    EndBonusTrigger
+}
 
 /** Initial default state configuration for starting or resetting the game. */
 const initialState: State = {
