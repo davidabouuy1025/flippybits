@@ -17,16 +17,12 @@ import {
     expand,
     timer,
     bufferCount,
-    bufferTime,
-    takeUntil,
     shareReplay,
     pairwise,
-    Subject,
     exhaustMap,
     concat,
     ignoreElements,
-    defer,
-    takeWhile
+    defer
 } from "rxjs";
 
 import {
