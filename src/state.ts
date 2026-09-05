@@ -101,7 +101,7 @@ class Tick implements Action {
      * @returns Mutated state progression.
      */
     apply(s: State): State {
-        const currentTimeSec = s.time + Constants.TICK_RATE_MS/1000;
+        const currentTimeSec = s.time + Constants.TICK_RATE_MS / 1000;
 
         const updatedTargetList = s.targets.map(
             advanceTarget(currentTimeSec)(s.score)

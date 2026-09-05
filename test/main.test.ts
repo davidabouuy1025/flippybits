@@ -1,23 +1,25 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { TestScheduler } from 'rxjs/testing';
-import { map, interval, take } from 'rxjs';
+import { map, interval, take, reduce } from 'rxjs';
 
 import { BitIndex, Target, State, TargetConfig, Constants } from '../src/types';
-import { 
-  initialState,  
-  Tick, 
-  FlipBit, 
-  SpawnTarget, 
-  Restart, 
-  Pause, 
-  reduceState 
+import {
+  initialState,
+  Tick,
+  FlipBit,
+  SpawnTarget,
+  Restart,
+  Pause,
+  reduceState,
+  StartBonusTrigger,
+  checkBinaryMatched
 } from '../src/state';
-import { 
-  Vec, 
-  generateRandomInt, 
-  smoothMovement, 
-  stepMovement, 
-  formatSecondsToMMSS ,
+import {
+  Vec,
+  generateRandomInt,
+  smoothMovement,
+  stepMovement,
+  formatSecondsToMMSS,
   bin2dec
 } from '../src/util';
 
@@ -72,24 +74,19 @@ describe('2. Deterministic PRNG & HOF Generators', () => {
 
 describe('3. Target Movement Functions', () => {
   test('smoothMovement scales vertical displacement by deltaMs', () => {
-    const speedPxPerTick = 100;
-    const deltaMs = 60; // 60ms tick
     const currentY = 10;
-    const IGNORE_THIS = 0;
+    const totalSpeed = 3;
 
-    const nextY = smoothMovement(speedPxPerTick)(IGNORE_THIS)(deltaMs)(currentY);
-    expect(nextY).toBe(16); // 10 + 100 * (60 / 1000)
+    const nextY = smoothMovement(currentY);
+    expect(nextY(totalSpeed)).toBe(13); 
   });
 
   test('stepMovement calculates discrete drop steps cleanly', () => {
     const timeCreated = 0;
+    const timeCurrent = 13;
     const initialY = 0;
-    const IGNORE_THIS = 0;
-
-    // Evaluates step drop logic using curried HOF signature
-    const yTick0 = stepMovement(timeCreated)(0)(initialY)(IGNORE_THIS)(IGNORE_THIS);
-    expect(yTick0).toBeDefined();
-    expect(typeof yTick0).toBe('number');
+    const nextY = stepMovement(timeCreated)(timeCurrent);
+    expect(nextY(initialY)).toBe(30);
   });
 });
 
@@ -99,7 +96,7 @@ describe('4. Pure Reducer & Action State Transitions', () => {
     const nextState = reduceState(initialState, action);
 
     expect(nextState.bits[7]).toBe(1);
-    expect(initialState.bits[7]).toBe(0); // Asserts zero side-effects on original state
+    expect(initialState.bits[7]).toBe(0);
   });
 
   test('SpawnTarget appends new target and sets creation timestamp', () => {
@@ -108,7 +105,7 @@ describe('4. Pure Reducer & Action State Transitions', () => {
       pos: new Vec(10, 0),
       createTime: 0,
       viewType: 'bits',
-      targetKind: { kind: 'SMOOTH', speedPxPerTick: 30 },
+      targetKind: { kind: 'SMOOTH'},
       value: 15,
       hex: '0F',
     };
@@ -128,7 +125,7 @@ describe('4. Pure Reducer & Action State Transitions', () => {
           pos: new Vec(0, thresholdY),
           createTime: 0,
           viewType: 'bits',
-          targetKind: { kind: 'SMOOTH', speedPxPerTick: 10 },
+          targetKind: { kind: 'SMOOTH'},
           value: 99,
           hex: '63',
         },
@@ -151,7 +148,7 @@ describe('4. Pure Reducer & Action State Transitions', () => {
           pos: new Vec(0, 100),
           createTime: 0,
           viewType: 'bits',
-          targetKind: { kind: 'SMOOTH', speedPxPerTick: 10 },
+          targetKind: { kind: 'SMOOTH'},
           value: 10,
           hex: '0A',
         },
@@ -182,6 +179,16 @@ describe('4. Pure Reducer & Action State Transitions', () => {
     const resetState = reduceState(dirtyState, new Restart());
     expect(resetState).toEqual(initialState);
   });
+
+  test('StartBonusTrigger action allows double score per FallenBit', () => {
+    const currentState = {
+      ...initialState
+    };
+
+
+    const checkBonusTriggerState = reduceState(currentState, new StartBonusTrigger());
+    expect(checkBonusTriggerState.isDoublePoint).toEqual(!currentState.isDoublePoint);
+  })
 });
 
 describe('5. RxJS Timing & Event Streams (Virtual Time)', () => {

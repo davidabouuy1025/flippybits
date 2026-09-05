@@ -44,7 +44,7 @@ export const stepMovement =
   (timeCreated: number) =>
     (timeCurrent: number): MovementStrategy =>
       (initialY) => {
-        const nextStep = Constants.STEEP_TARGET_DROP_Y * modulus((timeCurrent - timeCreated)*100)(Constants.STEEP_TARGET_TIME_PRIME)
+        const nextStep = Constants.STEEP_TARGET_DROP_Y * modulus((timeCurrent - timeCreated) * 100)(Constants.STEEP_TARGET_TIME_PRIME)
         return initialY + (nextStep);
       };
 
@@ -58,7 +58,11 @@ export const resolveStrategy =
   (target: Target) =>
     (currentTimeSec: number) =>
       (score: number): MovementStrategy => {
-        const speedFromScore = calculateSpeedOverScore(Constants.BASE_SPEED)(Constants.SPEED_INCREMENT)(Constants.SCORE_INTERVAL)(score);
+        const speedFromScore = calculateSpeedOverScore
+          (Constants.BASE_SPEED)
+          (Constants.SPEED_INCREMENT)
+          (Constants.SCORE_INTERVAL)
+          (score);
         const speedFromTime = calculateSpeedOverTime(currentTimeSec);
         const totalSpeed = speedFromScore + speedFromTime;
 
@@ -167,7 +171,7 @@ export const generateRandomInt =
  * @returns Target parameters including decimal value, position X, hex string, and next seed.
  */
 export const generateTargetParams = (seed: number, maxX: number) => {
-  const valRes = generateRandomInt(0)(16)(seed);              // Change 256 to 16 for 4-bit playing
+  const valRes = generateRandomInt(0)(256)(seed);              // Change 256 to 16 for 4-bit playing
   const xRes = generateRandomInt(0)(maxX)(valRes.nextSeed);   // Position X
 
   return {

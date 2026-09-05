@@ -29,11 +29,36 @@ import {
     takeWhile
 } from "rxjs";
 
-import { BitIndex, Target, State, Action, Viewport, TargetConfig, Constants, TargetMovementConfig } from './types';
+import {
+    BitIndex,
+    Target,
+    State,
+    Action,
+    Viewport,
+    TargetConfig,
+    Constants,
+    TargetMovementConfig
+} from './types';
 
-import { initialState, Tick, FlipBit, SpawnTarget, Restart, reduceState, Pause, StartBonusTrigger, EndBonusTrigger } from './state'
+import {
+    initialState,
+    Tick,
+    FlipBit,
+    SpawnTarget,
+    Restart,
+    reduceState,
+    Pause,
+    StartBonusTrigger,
+    EndBonusTrigger
+} from './state'
 
-import { formatSecondsToMMSS, generateRandomInt, generateTargetParams, Vec, bin2dec } from "./util";
+import {
+    formatSecondsToMMSS,
+    generateRandomInt,
+    generateTargetParams,
+    Vec,
+    bin2dec
+} from "./util";
 
 /**
  * Main function block
@@ -208,31 +233,34 @@ const render = (): ((s: State) => void) => {
     );
 
     const digitWidth = Viewport.CANVAS_WIDTH / Constants.DIGIT_COUNT;
-    const bitElements = Array.from({ length: Constants.DIGIT_COUNT }).map((_, i) => {
-        const rect = createSvgElement(svg.namespaceURI, "rect", {
-            x: `${i * digitWidth + 4}`,
-            y: `${Viewport.CANVAS_HEIGHT - 50}`,
-            width: `${digitWidth - 8}`,
-            height: "40",
-            fill: "#ef9a9a",
-            stroke: "black",
-            "stroke-width": "2",
-            "data-index": `${i}`, // Enables click event mapping in mouseFlip$
-        });
+    const bitElements = Array.from(
+        { length: Constants.DIGIT_COUNT }
+    ).map(
+        (_, i) => {
+            const rect = createSvgElement(svg.namespaceURI, "rect", {
+                x: `${i * digitWidth + 4}`,
+                y: `${Viewport.CANVAS_HEIGHT - 50}`,
+                width: `${digitWidth - 8}`,
+                height: "40",
+                fill: "#ef9a9a",
+                stroke: "black",
+                "stroke-width": "2",
+                "data-index": `${i}`, // Enables click event mapping in mouseFlip$
+            });
 
-        const text = createSvgElement(svg.namespaceURI, "text", {
-            x: `${i * digitWidth + digitWidth / 2}`,
-            y: `${Viewport.CANVAS_HEIGHT - 22}`,
-            "text-anchor": "middle",
-            "font-family": "monospace",
-            fill: "black",
-            "pointer-events": "none", // Allows clicks to pass through to the rect
-        });
+            const text = createSvgElement(svg.namespaceURI, "text", {
+                x: `${i * digitWidth + digitWidth / 2}`,
+                y: `${Viewport.CANVAS_HEIGHT - 22}`,
+                "text-anchor": "middle",
+                "font-family": "monospace",
+                fill: "black",
+                "pointer-events": "none", // Allows clicks to pass through to the rect
+            });
 
-        svg.appendChild(rect);
-        svg.appendChild(text);
-        return { rect, text };
-    });
+            svg.appendChild(rect);
+            svg.appendChild(text);
+            return { rect, text };
+        });
 
     const scoreText = createSvgElement(svg.namespaceURI, "text", {
         x: "15",
