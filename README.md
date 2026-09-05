@@ -3,11 +3,13 @@
 ## Game Features 
 ### HD Extensions Requirements
 
-- Users can pause the game by clicking 'Key P' or 'Escape'
-- Unit tests are provided under `test/`
-- Special FallenBit - Steep Target may be spawned where instead of falling smoothly, it teleports downward with larger y distance with delay continuously
-- Special Effect - Double Score is applied after users solve 3 FallenBit correctly
-- Special Effect - The speed of FallenBit falling grows along users' score and time asurvived
+| Feature | How it works |
+|---|---|
+| Pause | Press `P` or `Escape` to pause. This stops targets from moving and stops bit flips from doing anything, so you can't cheat by pausing mid-match. Press the same key again to resume. |
+| Unit tests | Tests are in the `test/` folder and cover the core game logic (scoring, matching, movement). |
+| Steep target (Special FallenBit) | Most targets fall smoothly, but sometimes a "steep" one spawns instead. Rather than moving a little bit every tick, it stays still for a short delay, then jumps down a fixed distance all at once, then waits again. It repeats this until it either gets matched or reaches the bottom. |
+| Double score bonus | If you match 3 targets correctly in a row, you enter a bonus period where every match is worth double points. This lasts a few seconds, then turns off, followed by a short cooldown before you can trigger it again. |
+| Speed increase | Targets fall faster the longer you survive and the higher your score gets. Both are added together, so the game gets harder from two directions at once: just playing for longer, and doing well. |
 
 ### Full Game Requirements
 
