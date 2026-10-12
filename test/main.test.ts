@@ -11,8 +11,7 @@ import {
   Restart,
   Pause,
   reduceState,
-  StartBonusTrigger,
-  checkBinaryMatched
+  StartBonusTrigger
 } from '../src/state';
 import {
   Vec,
