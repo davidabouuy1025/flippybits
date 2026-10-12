@@ -77,6 +77,7 @@ export const state$ = (): Observable<State> => {
         filter(({ code }) => code.startsWith('Digit') || code === 'KeyR'),
         map(({ code }) => {
             const index = (Number(code.replace('Digit', '')) - 1) as BitIndex;
+            console.log(index)
             return (code === 'KeyR') ? new Restart() : new FlipBit(index);
         })
     );

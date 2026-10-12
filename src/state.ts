@@ -28,7 +28,7 @@ export {
 /** Initial default state configuration for starting or resetting the game. */
 const initialState: State = {
     time: 0,
-    bits: [0, 0, 0, 0, 0, 0, 0, 0],
+    bits: [0, 0, 0, 0],
     targets: [],
     score: 0,
     gamePause: false,

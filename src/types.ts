@@ -4,7 +4,7 @@ export type { BitIndex, Target, State, Action, ViewType, ObjectId, Rectangle, Ke
 export { Viewport, TargetConfig, Constants }
 
 /** Index representing an 8-bit position (0–7). */
-type BitIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type BitIndex = 0 | 1 | 2 | 3;
 
 /** Display mode for target values. */
 type ViewType = 'bits' | 'hex';
@@ -55,7 +55,7 @@ type State = Readonly<{
 }>;
 
 /** Keyboard input keys handled by the game. */
-type Key = 'Digit1' | 'Digit2' | 'Digit3' | 'Digit4' | 'Digit5' | 'Digit6' | 'Digit7' | 'Digit8' | 'KeyR';
+type Key = 'Digit1' | 'Digit2' | 'Digit3' | 'Digit4' | 'KeyR';
 
 /** Supported DOM event types. */
 type Event = 'keydown' | 'keyup' | 'click';
@@ -83,7 +83,7 @@ const Constants = {
     /**
      * DIGIT_COUNT = How many digits of the gameplay (8-bit)
      */
-    DIGIT_COUNT: 8,
+    DIGIT_COUNT: 4,
     /**
      * SCORE_INCREMENT = How many digits of the gameplay (8-bit)
      *  */

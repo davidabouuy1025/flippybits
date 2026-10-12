@@ -8,7 +8,7 @@ import { MovementStrategy, Constants, Target } from "./types";
  */
 export const bin2dec = (bits: ReadonlyArray<number>): number =>
   bits.reduce((acc, curr, index) =>
-    acc + curr * (2 ** (7 - index)),
+    acc + curr * (2 ** (Constants.DIGIT_COUNT - 1 - index)),
     0
   );
 
@@ -171,13 +171,13 @@ export const generateRandomInt =
  * @returns Target parameters including decimal value, position X, hex string, and next seed.
  */
 export const generateTargetParams = (seed: number, maxX: number) => {
-  const valRes = generateRandomInt(0)(256)(seed);              // Change 256 to 16 for 4-bit playing
+  const valRes = generateRandomInt(0)(16)(seed);              // Change 256 to 16 for 4-bit playing
   const xRes = generateRandomInt(0)(maxX)(valRes.nextSeed);   // Position X
 
   return {
     val: valRes.value,
     x: xRes.value,
-    hex: valRes.value.toString(16).toUpperCase().padStart(2, '0'),
+    hex: valRes.value.toString(8).toUpperCase().padStart(2, '0'),
     nextSeed: xRes.nextSeed,
   };
 };
